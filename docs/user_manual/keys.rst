@@ -6194,7 +6194,9 @@ The output variables are:
 
    ``swe_out`` for snow water equivalent :math:`[mm]` using the silo variable *SWE*;
 
-   ``t_grnd`` for ground surface temperature :math:`[K]` using the silo variable *TemperatureGround*; and
+   ``t_grnd`` for ground surface temperature :math:`[K]` using the silo variable *TemperatureGround*;
+
+   ``qflx_qirr`` for irrigation flux :math:`[]`; and
 
    ``t_soil`` for soil temperature over all layers :math:`[K]` using the silo variable *TemperatureSoil*.
 
