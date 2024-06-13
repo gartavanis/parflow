@@ -278,7 +278,6 @@ endif (${PARFLOW_ENABLE_HDF5} OR DEFINED HDF5_ROOT)
 #-----------------------------------------------------------------------------
 option(PARFLOW_ENABLE_HYPRE "Build with Hypre" "OFF")
 if (${PARFLOW_ENABLE_HYPRE} OR DEFINED HYPRE_ROOT)
-  find_package(CUDAToolkit REQUIRED)
   find_package(Hypre)
   if (${HYPRE_FOUND})
     set(PARFLOW_HAVE_HYPRE "yes")
@@ -292,6 +291,9 @@ if (${PARFLOW_ENABLE_HYPRE} OR DEFINED HYPRE_ROOT)
     version_create_variables (PARFLOW_HYPRE)
 
   endif (${HYPRE_FOUND})
+  if(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
+    find_package(CUDAToolkit REQUIRED)
+
 endif (${PARFLOW_ENABLE_HYPRE} OR DEFINED HYPRE_ROOT)
 
 #-----------------------------------------------------------------------------

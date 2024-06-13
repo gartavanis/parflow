@@ -17,10 +17,12 @@ if( ${PARFLOW_HAVE_CLM} )
 endif( ${PARFLOW_HAVE_CLM} )
 
 if (${PARFLOW_HAVE_HYPRE})
-  target_link_libraries(parflow PRIVATE ${HYPRE_LIBRARIES})
-  target_link_libraries(parflow PRIVATE CUDA::curand)
-  target_link_libraries(parflow PRIVATE CUDA::cusparse)
-  target_link_libraries(parflow PRIVATE CUDA::cublas)
+    target_link_libraries(parflow PRIVATE ${HYPRE_LIBRARIES})
+    if(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
+      # Link with cudatoolkit external libraries used by HYPRE
+      target_link_libraries(parflow PRIVATE CUDA::curand)
+      target_link_libraries(parflow PRIVATE CUDA::cusparse)
+      target_link_libraries(parflow PRIVATE CUDA::cublas)
 
 endif (${PARFLOW_HAVE_HYPRE})
 
