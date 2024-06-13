@@ -1,61 +1,64 @@
 add_executable(parflow main.c)
 
-target_link_libraries(parflow pfsimulator)
+target_link_libraries(parflow PRIVATE pfsimulator)
 
 if( ${PARFLOW_HAVE_ETRACE} )
   target_include_directories(parflow PUBLIC "../third_party/etrace")
-  target_link_libraries(parflow etrace)
+  target_link_libraries(parflow PRIVATE etrace)
 endif( ${PARFLOW_HAVE_ETRACE} )
 
 if( ${PARFLOW_HAVE_RMM} )
-  target_link_libraries(parflow rmm)
   target_include_directories(parflow PRIVATE ${RMM_INCLUDE})
   target_compile_definitions(parflow PRIVATE PARFLOW_HAVE_RMM)
 endif( ${PARFLOW_HAVE_RMM} )
 
 if( ${PARFLOW_HAVE_CLM} )
-  target_link_libraries(parflow pfclm)
+  target_link_libraries(parflow PRIVATE pfclm)
 endif( ${PARFLOW_HAVE_CLM} )
 
 if (${PARFLOW_HAVE_HYPRE})
-  target_link_libraries (parflow ${HYPRE_LIBRARIES})
+  target_link_libraries(parflow PRIVATE ${HYPRE_LIBRARIES})
+  target_link_libraries(parflow PRIVATE CUDA::curand)
+  target_link_libraries(parflow PRIVATE CUDA::cusparse)
+  target_link_libraries(parflow PRIVATE CUDA::cublas)
+
 endif (${PARFLOW_HAVE_HYPRE})
 
 if (${PARFLOW_HAVE_MPI})
   # In CMake 3.13 this could be target_link_options
-  target_link_libraries(parflow ${MPI_LINK_FLAGS})
-  target_link_libraries (parflow ${MPI_LIBRARIES})
+  target_link_libraries(parflow PRIVATE ${MPI_LINK_FLAGS})
+  target_link_libraries (parflow PRIVATE ${MPI_LIBRARIES})
 endif (${PARFLOW_HAVE_MPI})
 
 if (${PARFLOW_HAVE_SILO})
-  target_link_libraries (parflow ${SILO_LIBRARIES})
+  target_link_libraries (parflow PRIVATE ${SILO_LIBRARIES})
 endif (${PARFLOW_HAVE_SILO})
 
 if (${PARFLOW_HAVE_NETCDF})
-  target_link_libraries (parflow ${NetCDF_LIBRARIES})
+  target_link_libraries (parflow PRIVATE ${NetCDF_LIBRARIES})
 
-  target_link_libraries (parflow ${CURL_LIBRARIES})
+  target_link_libraries (parflow PRIVATE ${CURL_LIBRARIES})
 endif (${PARFLOW_HAVE_NETCDF})
 
 if (${PARFLOW_HAVE_HDF5})
-  target_link_libraries (parflow ${HDF5_LIBRARIES})
+  target_link_libraries (parflow PRIVATE ${HDF5_LIBRARIES})
 
   if (${PARFLOW_HAVE_NETCDF})
-    target_link_libraries (parflow ${HDF5_HL_LIBRARIES})
+    target_link_libraries (parflow PRIVATE ${HDF5_HL_LIBRARIES})
 
   endif (${PARFLOW_HAVE_NETCDF})
 endif (${PARFLOW_HAVE_HDF5})
 
 if (${PARFLOW_HAVE_ZLIB})
-  target_link_libraries (parflow ${ZLIB_LIBRARIES})
+  target_link_libraries (parflow PRIVATE ${ZLIB_LIBRARIES})
 endif (${PARFLOW_HAVE_ZLIB})
 
 if (${PARFLOW_HAVE_SZLIB})
-  target_link_libraries (parflow ${SZLIB_LIBRARIES})
+  target_link_libraries (parflow PRIVATE ${SZLIB_LIBRARIES})
 endif (${PARFLOW_HAVE_SZLIB})
 
 if (${PARFLOW_HAVE_SLURM})
-  target_link_libraries (parflow ${SLURM_LIBRARIES})
+  target_link_libraries (parflow PRIVATE ${SLURM_LIBRARIES})
 endif (${PARFLOW_HAVE_SLURM})
 
 if( ${PARFLOW_ENABLE_PROFILING} )
