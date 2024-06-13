@@ -21,7 +21,7 @@ if (${PARFLOW_HAVE_HYPRE})
     if(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
       # Link with cudatoolkit external libraries used by HYPRE
       target_link_libraries(parflow PRIVATE CUDA::curand)
-      target_link_libraries(parflow PRIVATE CUDA::cusparse)
+      # target_link_libraries(parflow PRIVATE CUDA::cusparse)
       target_link_libraries(parflow PRIVATE CUDA::cublas)
       set_target_properties(parflow PROPERTIES CUDA_ARCHITECTURES "35;50;;70;72")
     endif (PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
