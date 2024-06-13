@@ -23,7 +23,7 @@ if (${PARFLOW_HAVE_HYPRE})
       target_link_libraries(parflow PRIVATE CUDA::curand)
       target_link_libraries(parflow PRIVATE CUDA::cusparse)
       target_link_libraries(parflow PRIVATE CUDA::cublas)
-
+    endif (PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
 endif (${PARFLOW_HAVE_HYPRE})
 
 if (${PARFLOW_HAVE_MPI})

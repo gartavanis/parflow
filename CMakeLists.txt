@@ -290,10 +290,13 @@ if (${PARFLOW_ENABLE_HYPRE} OR DEFINED HYPRE_ROOT)
 
     version_create_variables (PARFLOW_HYPRE)
 
-  endif (${HYPRE_FOUND})
-  if(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
-    find_package(CUDAToolkit REQUIRED)
+    if(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
+      find_package(CUDAToolkit REQUIRED)
+    endif (PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
 
+  endif (${HYPRE_FOUND})
+
+  
 endif (${PARFLOW_ENABLE_HYPRE} OR DEFINED HYPRE_ROOT)
 
 #-----------------------------------------------------------------------------
