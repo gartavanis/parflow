@@ -56,6 +56,9 @@ elseif(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
     else(CMAKE_CUDA_COMPILER)
       message(FATAL_ERROR "ERROR: CUDA installation not found")
     endif(CMAKE_CUDA_COMPILER)
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+      set(CMAKE_CUDA_ARCHITECTURES 80)
+    endif()    
   else(NOT DEFINED KOKKOS_ROOT)
     # Allow mixed use of CUDA and Kokkos for development purposes
     find_package(Kokkos REQUIRED HINTS ${KOKKOS_ROOT})
@@ -292,7 +295,6 @@ if (${PARFLOW_ENABLE_HYPRE} OR DEFINED HYPRE_ROOT)
 
     if(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
       find_package(CUDAToolkit REQUIRED)
-      set_property(CACHE CMAKE_CUDA_ARCHITECTURES PROPERTY STRINGS "80")
     endif (PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
 
   endif (${HYPRE_FOUND})
