@@ -172,12 +172,20 @@ int main(int argc, char *argv [])
   * Initialize RMM pool allocator
   *-----------------------------------------------------------------------*/
 #ifdef PARFLOW_HAVE_RMM
-      // RMM
-      rmmOptions_t rmmOptions;
-      rmmOptions.allocation_mode = (rmmAllocationMode_t) (PoolAllocation | CudaManagedMemory);
-      rmmOptions.initial_pool_size = 1; // size = 0 initializes half the device memory
-      rmmOptions.enable_logging = false;
-      RMM_ERR(rmmInitialize(&rmmOptions));
+#include <pool_memory_resource.hpp>
+      rmm::mr::cuda_memory_resource cuda_mr;
+      // Construct a resource that uses a coalescing best-fit pool allocator
+      // With the pool initially half of available device memory
+      auto initial_size = rmm::percent_of_free_device_memory(100);
+      rmm::mr::pool_memory_resource<rmm::mr::cuda_memory_resource> pool_mr{&cuda_mr, initial_size};
+      rmm::mr::set_current_device_resource(&pool_mr); // Updates the current device resource pointer to `pool_mr`
+      //      rmm::mr::device_memory_resource* mr = rmm::mr::get_current_device_resource(); // Points to `pool_mr`
+ 
+      //      rmmOptions_t rmmOptions;
+      //      rmmOptions.allocation_mode = (rmmAllocationMode_t) (PoolAllocation | CudaManagedMemory);
+      //      rmmOptions.initial_pool_size = 1; // size = 0 initializes half the device memory
+      //      rmmOptions.enable_logging = false;
+      //      RMM_ERR(rmmInitialize(&rmmOptions));
 #endif // PARFLOW_HAVE_RMM
 
     wall_clock_time = amps_Clock();
