@@ -57,7 +57,7 @@ elseif(PARFLOW_ACCELERATOR_BACKEND STREQUAL "cuda")
       message(FATAL_ERROR "ERROR: CUDA installation not found")
     endif(CMAKE_CUDA_COMPILER)
     if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-      set(CMAKE_CUDA_ARCHITECTURES 80)
+      set(CMAKE_CUDA_ARCHITECTURES 80 CACHE STRING "")
     endif()    
   else(NOT DEFINED KOKKOS_ROOT)
     # Allow mixed use of CUDA and Kokkos for development purposes
