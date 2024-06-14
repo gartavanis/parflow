@@ -12,24 +12,24 @@ set (TOOLS_SRC_FILES pftappinit.c printdatabox.c readdatabox.c databox.c
 add_library(pftools SHARED ${TOOLS_SRC_FILES})
 
 target_include_directories(pftools PUBLIC ${TCL_INCLUDE_PATH})
-target_link_libraries(pftools ${TCL_LIBRARY})
+target_link_libraries(pftools PRIVATE ${TCL_LIBRARY})
 
 if (${PARFLOW_HAVE_SILO})
   target_include_directories (pftools PUBLIC "${SILO_INCLUDE_DIRS}")
-  target_link_libraries (pftools ${SILO_LIBRARIES})
+  target_link_libraries (pftools PRIVATE ${SILO_LIBRARIES})
 endif (${PARFLOW_HAVE_SILO})
 
 if (${PARFLOW_HAVE_HDF5})
   target_include_directories (pftools PUBLIC "${HDF5_INCLUDE_DIRS}")
-  target_link_libraries (pftools ${HDF5_LIBRARIES})
+  target_link_libraries (pftools PRIVATE ${HDF5_LIBRARIES})
 endif (${PARFLOW_HAVE_HDF5})
 
 if (${PARFLOW_HAVE_ZLIB})
-  target_link_libraries (pftools ${ZLIB_LIBRARIES})
+  target_link_libraries (pftools PRIVATE ${ZLIB_LIBRARIES})
 endif (${PARFLOW_HAVE_ZLIB})
 
 if (${PARFLOW_HAVE_SZLIB})
-  target_link_libraries (pftools ${SZLIB_LIBRARIES})
+  target_link_libraries (pftools PRIVATE ${SZLIB_LIBRARIES})
 endif (${PARFLOW_HAVE_SZLIB})
 
 # Install to bin is for TCL which seem to prefer shared libraries
@@ -59,7 +59,7 @@ add_executable(gmstriangulate gmstriangulate.c gmsreadTIN.c gmswriteTIN.c geom_s
 install(TARGETS gmstriangulate DESTINATION bin)
 
 add_executable(projecttin projecttin.c gmsreadTIN.c)
-target_link_libraries(projecttin ${PARFLOW_LIBM})
+target_link_libraries(projecttin PRIVATE ${PARFLOW_LIBM})
 install(TARGETS projecttin DESTINATION bin)
 
 #-----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ install(TARGETS projecttin DESTINATION bin)
 #-----------------------------------------------------------------------------
 add_executable(pfmask-to-pfsol pfmask-to-pfsol.cpp)
 target_include_directories(pfmask-to-pfsol PUBLIC third_party)
-target_link_libraries(pfmask-to-pfsol pftools)
+target_link_libraries(pfmask-to-pfsol PRIVATE pftools)
 install(TARGETS pfmask-to-pfsol DESTINATION bin)
 
 add_executable(pfsol-to-vtk pfsol-to-vtk.c)

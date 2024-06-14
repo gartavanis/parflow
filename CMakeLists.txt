@@ -82,9 +82,9 @@ endif()
 
 # Include RapidsAI Memory Manager (RMM) for pool allocation
 if((${PARFLOW_HAVE_CUDA}) OR (${PARFLOW_HAVE_KOKKOS}))
-  if(DEFINED RMM_ROOT)
-    find_package(rmm 24.06.00)
-#    find_path(RMM_INCLUDE "rmm" HINTS "${RMM_ROOT}/include")
+  if(DEFINED rmm_ROOT)
+    find_package(rmm 24.08.0)
+    find_path(RMM_INCLUDE "rmm" HINTS "${rmm_ROOT}/include")
 #    find_library(RMM_LIBRARY "rmm" HINTS "${RMM_ROOT}/lib")
 #    if(RMM_INCLUDE AND RMM_LIBRARY)
 #      message(STATUS "RMM: RMM_LIBRARY set to ${RMM_LIBRARY}")
@@ -110,7 +110,7 @@ if((${PARFLOW_HAVE_CUDA}) OR (${PARFLOW_HAVE_KOKKOS}))
 #    else(${PARFLOW_HAVE_CUDA}) 
 #      message(STATUS "ACCELERATOR: Compiling with Kokkos (RMM not used)")
 #    endif(${PARFLOW_HAVE_CUDA}) 
-  endif(DEFINED RMM_ROOT)
+  endif(DEFINED rmm_ROOT)
 endif((${PARFLOW_HAVE_CUDA}) OR (${PARFLOW_HAVE_KOKKOS}))
 
 #-----------------------------------------------------------------------------

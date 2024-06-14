@@ -198,18 +198,18 @@ endif(${PARFLOW_HAVE_KOKKOS})
   add_library(pfsimulator ${SRC_FILES_ARCH} ${SRC_FILES_CONST})
 
   if ( ${PARFLOW_HAVE_CUDA} )
-    target_link_libraries(pfsimulator nvToolsExt)
-    target_include_directories(pfsimulator PUBLIC "../third_party/cub")
+    target_link_libraries(pfsimulator PRIVATE nvToolsExt)
+#    target_include_directories(pfsimulator PUBLIC "../third_party/cub")
     target_include_directories(pfsimulator PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
   endif ( ${PARFLOW_HAVE_CUDA} )
 
   if( ${PARFLOW_HAVE_KOKKOS} )
-    target_link_libraries(pfsimulator Kokkos::kokkos)
+    target_link_libraries(pfsimulator PRIVATE Kokkos::kokkos)
     target_include_directories(pfsimulator PUBLIC ${KOKKOS_INCLUDE})
   endif( ${PARFLOW_HAVE_KOKKOS} )
 
   if( ${PARFLOW_HAVE_RMM} )
-    target_link_libraries(pfsimulator rmm:rmm)
+    target_link_libraries(pfsimulator PRIVATE rmm::rmm)
     target_include_directories(pfsimulator PRIVATE ${RMM_INCLUDE})
     target_compile_definitions(pfsimulator PRIVATE PARFLOW_HAVE_RMM)
   endif( ${PARFLOW_HAVE_RMM} )
@@ -253,7 +253,7 @@ else( (${PARFLOW_HAVE_CUDA}) OR (${PARFLOW_HAVE_KOKKOS}) OR (${PARFLOW_HAVE_OMP}
 
 endif( (${PARFLOW_HAVE_CUDA}) OR (${PARFLOW_HAVE_KOKKOS}) OR (${PARFLOW_HAVE_OMP}) )
 
-target_link_libraries(pfsimulator pfkinsol amps cjson ${PARFLOW_ETRACE_LIBRARY})
+target_link_libraries(pfsimulator PRIVATE pfkinsol PRIVATE amps PRIVATE cjson PRIVATE ${PARFLOW_ETRACE_LIBRARY})
 target_include_directories(pfsimulator PUBLIC "../third_party/cjson")
 
 if (${PARFLOW_HAVE_MPI})

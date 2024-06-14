@@ -17,12 +17,12 @@ if(${PARFLOW_HAVE_CUDA})
 endif(${PARFLOW_HAVE_CUDA})
 
 if( ${PARFLOW_HAVE_RMM} )
-  target_link_libraries(amps rmm:rmm)
+  target_link_libraries(amps PRIVATE rmm::rmm)
   target_include_directories(amps PUBLIC ${RMM_INCLUDE})
 endif( ${PARFLOW_HAVE_RMM} )
 
 if( ${PARFLOW_HAVE_KOKKOS} )
-  target_link_libraries(amps Kokkos::kokkos)
+  target_link_libraries(amps PRIVATE Kokkos::kokkos)
   target_include_directories(amps PUBLIC ${KOKKOS_INCLUDE})
 endif( ${PARFLOW_HAVE_KOKKOS} )
 
@@ -31,10 +31,10 @@ if (${PARFLOW_HAVE_MPI})
 endif (${PARFLOW_HAVE_MPI})
 
 if(${PARFLOW_HAVE_OAS3})
-  target_link_libraries(amps ${OASIS_Fortran_LIBRARY} ${MCT_Fortran_LIBRARY} ${MPEU_Fortran_LIBRARY} ${SCRIP_Fortran_LIBRARY})
+  target_link_libraries(amps PRIVATE ${OASIS_Fortran_LIBRARY} PRIVATE ${MCT_Fortran_LIBRARY} PRIVATE ${MPEU_Fortran_LIBRARY} PRIVATE ${SCRIP_Fortran_LIBRARY})
   target_include_directories(amps PUBLIC "${OASIS_Fortran_INCLUDES}")
   
-  target_link_libraries(amps ${NETCDF_Fortran_LIBRARY})
+  target_link_libraries(amps PRIVATE ${NETCDF_Fortran_LIBRARY})
   target_include_directories(amps PUBLIC "${NETCDF_Fortran_INCLUDES}")
 endif(${PARFLOW_HAVE_OAS3})
 
