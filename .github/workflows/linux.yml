@@ -517,7 +517,7 @@ jobs:
            $NETCDF_FLAGS $KOKKOS_FLAGS $RMM_FLAGS $UMPIRE_FLAGS
 
     - name: ParFlow CMake Build
-      run: (pwd;cd build; make -j 2 install)
+      run: (cd build; make -j 2 install)
 
     # Can't test with GPU since have no GPU hardware on testing nodes, GPU test is build only
     - name: ParFlow CTest
@@ -525,4 +525,4 @@ jobs:
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=1
         export OMP_NUM_THREADS=1
-        (cd $PARFLOW_DIR/bin; addr2line -e parflow 0x16e0a; cd build; ctest --output-on-failure -R torch)
+        (addr2line -e $PARFLOW_DIR/bin/parflow 0x16e0a; cd build; ctest --output-on-failure -R torch)
