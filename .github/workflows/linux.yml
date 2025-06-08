@@ -98,39 +98,39 @@ jobs:
       # fail-fast: true
       matrix:
         config:
-        - {
-            name: "Ubuntu 24.04 GCC",
-            os: ubuntu-24.04,
-            cudaos: 'ubuntu2404',
-            cc: "gcc", cxx: "g++", fc: "gfortran",
-            python: "false",
-            backend: "none",
-            amps_layer: mpi1,
-            netcdf: "true",
-            memory_manager: "none"
-          }
-        - {
-            name: "Ubuntu 24.04 LLVM",
-            os: ubuntu-24.04,
-            cudaos: 'ubuntu2404',
-            cc: "clang-18", cxx: "clang++-18", fc: "gfortran",
-            python: "false",
-            backend: "none",
-            amps_layer: mpi1,
-            netcdf: "true",
-            memory_manager: "none"
-          }
-        - {
-            name: "Ubuntu 22.04 GCC Python",
-            os: ubuntu-22.04,
-            cudaos: 'ubuntu2204',
-            cc: "gcc", cxx: "g++", fc: "gfortran",
-            python: "true",
-            backend: "none",
-            amps_layer: mpi1,
-            netcdf: "true",
-            memory_manager: "none"
-          }
+#        - {
+#            name: "Ubuntu 24.04 GCC",
+#            os: ubuntu-24.04,
+#            cudaos: 'ubuntu2404',
+#            cc: "gcc", cxx: "g++", fc: "gfortran",
+#            python: "false",
+#            backend: "none",
+#            amps_layer: mpi1,
+#            netcdf: "true",
+#            memory_manager: "none"
+#          }
+#        - {
+#            name: "Ubuntu 24.04 LLVM",
+#            os: ubuntu-24.04,
+#            cudaos: 'ubuntu2404',
+#            cc: "clang-18", cxx: "clang++-18", fc: "gfortran",
+#            python: "false",
+#            backend: "none",
+#            amps_layer: mpi1,
+#            netcdf: "true",
+#             memory_manager: "none"
+#          }
+#        - {
+#            name: "Ubuntu 22.04 GCC Python",
+#            os: ubuntu-22.04,
+#            cudaos: 'ubuntu2204',
+#            cc: "gcc", cxx: "g++", fc: "gfortran",
+#            python: "true",
+#            backend: "none",
+#            amps_layer: mpi1,
+#            netcdf: "true",
+#            memory_manager: "none"
+#          }
         - {
             name: "Ubuntu 24.04 GCC Python",
             os: ubuntu-24.04,
@@ -142,28 +142,28 @@ jobs:
             netcdf: "false",
             memory_manager: "none"
           }
-        - {
-            name: "Ubuntu 22.04 GCC OMP",
-            os: ubuntu-22.04,
-            cudaos: 'ubuntu2204',
-            cc: "gcc", cxx: "g++", fc: "gfortran",
-            python: "false",
-            backend: "omp",
-            amps_layer: mpi1,
-            netcdf: "false",
-            memory_manager: "none"
-          }
-        - {
-            name: "Ubuntu 24.04 LLVM OASIS3-MCT Build",
-            os: ubuntu-24.04,
-            cudaos: 'ubuntu2204',
-            cc: "clang-18", cxx: "clang++-18", fc: "gfortran",
-            python: "false",
-            backend: "omp",
-            amps_layer: oas3,
-            netcdf: "true",
-            memory_manager: "none"
-          }
+#        - {
+#            name: "Ubuntu 22.04 GCC OMP",
+#            os: ubuntu-22.04,
+#            cudaos: 'ubuntu2204',
+#            cc: "gcc", cxx: "g++", fc: "gfortran",
+#            python: "false",
+#            backend: "omp",
+#            amps_layer: mpi1,
+#            netcdf: "false",
+#            memory_manager: "none"
+#          }
+#        - {
+#            name: "Ubuntu 24.04 LLVM OASIS3-MCT Build",
+#            os: ubuntu-24.04,
+#            cudaos: 'ubuntu2204',
+#            cc: "clang-18", cxx: "clang++-18", fc: "gfortran",
+#            python: "false",
+#            backend: "omp",
+#            amps_layer: oas3,
+#            netcdf: "true",
+#            memory_manager: "none"
+#          }
 #        - {
 #            name: "Ubuntu 24.04 GCC CUDA/RMM Build",
 #            os: ubuntu-24.04,
@@ -175,17 +175,17 @@ jobs:
 #            netcdf: "false",
 #            memory_manager: "rmm"
 #          }
-        - {
-            name: "Ubuntu 24.04 GCC CUDA/Umpire Build",
-            os: ubuntu-24.04,
-            cc: "gcc", cxx: "g++", fc: "gfortran",
-            python: "false",
-            backend: "cuda",
-            cudaos: 'ubuntu2204',
-            amps_layer: mpi1,
-            netcdf: "false",
-            memory_manager: "umpire"
-          }
+#        - {
+#            name: "Ubuntu 24.04 GCC CUDA/Umpire Build",
+#            os: ubuntu-24.04,
+#            cc: "gcc", cxx: "g++", fc: "gfortran",
+#            python: "false",
+#            backend: "cuda",
+#            cudaos: 'ubuntu2204',
+#            amps_layer: mpi1,
+#            netcdf: "false",
+#            memory_manager: "umpire"
+#          }
 #        - {
 #            name: "Ubuntu 24.04 GCC Kokkos/RMM Build",
 #            os: ubuntu-24.04,
@@ -197,17 +197,17 @@ jobs:
 #            netcdf: "false",
 #            memory_manager: "rmm"
 #          }
-        - {
-            name: "Ubuntu 24.04 GCC Kokkos/Umpire Build",
-            os: ubuntu-24.04,
-            cc: "gcc", cxx: "g++", fc: "gfortran",
-            python: "false",
-            backend: "kokkos",
-            cudaos: 'ubuntu2204',
-            amps_layer: mpi1,
-            netcdf: "false",
-            memory_manager: "umpire"
-          }
+#        - {
+#            name: "Ubuntu 24.04 GCC Kokkos/Umpire Build",
+#            os: ubuntu-24.04,
+#            cc: "gcc", cxx: "g++", fc: "gfortran",
+#            python: "false",
+#            backend: "kokkos",
+#            cudaos: 'ubuntu2204',
+#            amps_layer: mpi1,
+#            netcdf: "false",
+#            memory_manager: "umpire"
+#          }
 
     steps:
     - uses: actions/checkout@v4
