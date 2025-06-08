@@ -500,7 +500,7 @@ jobs:
         if [[ "${{ matrix.config.cc }}" == "gcc" ]]; then CFLAGS="${CFLAGS} -Wno-stringop-overread"; fi
         export CC=mpicc CXX=mpicxx F77=mpif77 FC=mpif90 CUDAHOSTCXX=mpicxx
         cmake -Bbuild                                                   \
-           -DCMAKE_BUILD_TYPE=Release                                   \
+           -DCMAKE_BUILD_TYPE=Debug                                   \
            -DCMAKE_C_FLAGS=$CFLAGS                                      \
            -DPARFLOW_ENABLE_TIMING=TRUE                                 \
            -DPARFLOW_AMPS_LAYER=${{ matrix.config.amps_layer }}         \
@@ -525,4 +525,4 @@ jobs:
       run: |
         export OMPI_MCA_rmaps_base_oversubscribe=1
         export OMP_NUM_THREADS=1
-        (cd build; ctest --output-on-failure -R torch)
+        (cd $PARFLOW_DIR/bin; addr2line -e parflow 0x16e0a; cd build; ctest --output-on-failure -R torch)
