@@ -517,7 +517,7 @@ jobs:
            $NETCDF_FLAGS $KOKKOS_FLAGS $RMM_FLAGS $UMPIRE_FLAGS
 
     - name: ParFlow CMake Build
-      run: (cd build; make -j 2 install)
+      run: (pwd;cd build; make -j 2 install)
 
     # Can't test with GPU since have no GPU hardware on testing nodes, GPU test is build only
     - name: ParFlow CTest
