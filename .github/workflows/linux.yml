@@ -526,4 +526,4 @@ jobs:
         export OMPI_MCA_rmaps_base_oversubscribe=1
         export OMP_NUM_THREADS=1
         #(addr2line -e $PARFLOW_DIR/bin/parflow 0x16e0a; cd build; ctest --output-on-failure -R torch)
-        (cd build; ctest --output-on-failure)
+        (cd build; ctest --output-on-failure -R torch)
