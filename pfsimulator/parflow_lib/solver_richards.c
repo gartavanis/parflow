@@ -399,7 +399,7 @@ SetupRichards(PFModule * this_module)
 
   int any_file_dumped;
 
-  char filename[128];
+  char filename[256];
 
 #ifdef HAVE_CLM
   /* IMF: for CLM met forcings (local to SetupRichards) */
