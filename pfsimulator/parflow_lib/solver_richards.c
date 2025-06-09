@@ -1263,6 +1263,7 @@ SetupRichards(PFModule * this_module)
       Vector *alpha = NewVectorType(grid, 1, 1, vector_cell_centered);
       InitVectorAll(alpha, 0.0);
       sprintf(filename, "%s.alpha.pfb", file_prefix);
+      amps_Printf(">>>>>>>>>>>>>>>>>>>>>> n filename: %s", filename);
       ReadPFBinary(filename, alpha);
       Vector *n = NewVectorType(grid, 1, 1, vector_cell_centered);
       InitVectorAll(n, 0.0);
