@@ -54,6 +54,7 @@ extern "C" {
   
   double* predict_next_pressure_step(double* pp, double* et, int nx, int ny, int nz) {
     torch::Tensor press = torch::from_blob(pp, {nz, ny, nx}, torch::kDouble);
+    std::cout << ">>>>>>>>>>>>>>>>>>>>> Input pressure shape: " << press.sizes() << std::endl;
     torch::Tensor evaptrans = torch::from_blob(et, {nz, ny, nx}, torch::kDouble);    
     press = model.run_method("get_parflow_pressure", press).toTensor();
     evaptrans = model.run_method("get_parflow_evaptrans", evaptrans).toTensor();
@@ -64,7 +65,7 @@ extern "C" {
     inputs.push_back(statics);
     torch::Tensor output = model.forward(inputs).toTensor();
     torch::Tensor predicted_pressure = model.run_method("get_predicted_pressure", output).toTensor();
-    
+    std::cout << ">>>>>>>>>>>>>>>>>>>>> Predicted pressure shape: " << predicted_pressure.sizes() << std::endl;
     if (!predicted_pressure.is_contiguous()) {
       predicted_pressure = predicted_pressure.contiguous();
     }
