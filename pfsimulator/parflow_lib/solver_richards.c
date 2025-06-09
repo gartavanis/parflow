@@ -1320,6 +1320,8 @@ SetupRichards(PFModule * this_module)
       }
       FreeVector(sres);
       FreeVector(ssat);
+      FreeVector(alpha);
+      FreeVector(n);
       EndTiming(TorchTimingIndex);
     }
 #endif
