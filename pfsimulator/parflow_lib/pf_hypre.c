@@ -67,6 +67,16 @@ void CopyParFlowVectorToHypreVector(Vector *            rhs,
 
     int iv = SubvectorEltIndex(rhs_sub, ix, iy, iz);
 
+    // Debug: Print ParFlow subvector metadata and full rhs_ptr contents
+    amps_Printf("DEBUG: Subvector meta: ix=%d iy=%d iz=%d nx=%d ny=%d nz=%d nx_v=%d ny_v=%d nz_v=%d iv=%d\n",
+                ix, iy, iz, nx, ny, nz, nx_v, ny_v, nz_v, iv);
+    {
+      int rhs_size = nx_v * ny_v * nz_v;
+      amps_Printf("DEBUG: Printing full rhs_ptr of size %d\n", rhs_size);
+      for (int idx = 0; idx < rhs_size; idx++) {
+        amps_Printf("DEBUG: rhs_ptr[%d] = %.15e\n", idx, rhs_ptr[idx]);
+      }
+    }
 
     BoxLoopI1(i, j, k, ix, iy, iz, nx, ny, nz,
               iv, nx_v, ny_v, nz_v, 1, 1, 1,
@@ -75,10 +85,32 @@ void CopyParFlowVectorToHypreVector(Vector *            rhs,
       index[1] = j;
       index[2] = k;
 
+      // // Debug: Print ParFlow rhs_ptr values before transfer
+      // amps_Printf("DEBUG: ParFlow rhs_ptr[%d] = %.15e at [%d,%d,%d]\n", 
+      //             iv, rhs_ptr[iv], i, j, k);
+
       HYPRE_StructVectorSetValues(*hypre_b, index, rhs_ptr[iv]);
     });
   }
   HYPRE_StructVectorAssemble(*hypre_b);
+  
+  // Debug: Print Hypre internal data after assembly
+  // Access the internal data structure (this is implementation-specific)
+  amps_Printf("DEBUG: Printing Hypre internal data after assembly:\n");
+  
+  // Note: This accesses Hypre's internal structure - may need adjustment based on Hypre version
+  // The exact structure may vary, but we'll try to access the data array
+  if (*hypre_b && (*hypre_b)->data) {
+    HYPRE_Complex *hypre_data = (*hypre_b)->data;
+    int data_size = (*hypre_b)->data_size;
+    
+    amps_Printf("DEBUG: Hypre_b data_size = %d\n", data_size);
+    for (int idx = 0; idx < data_size; idx++) {
+      amps_Printf("DEBUG: hypre_b->data[%d] = %.15e\n", idx, hypre_data[idx]);
+    }
+  } else {
+    amps_Printf("DEBUG: Could not access Hypre internal data structure\n");
+  }
 }
 
 
@@ -92,6 +124,20 @@ void CopyHypreVectorToParflowVector(HYPRE_StructVector* hypre_x,
   int nx_v, ny_v, nz_v;
   int i, j, k;
   int index[3];
+
+  // Debug: Print entire hypre_x data before transfer
+  amps_Printf("DEBUG: Printing entire hypre_x data before transfer to ParFlow:\n");
+  if (*hypre_x && (*hypre_x)->data) {
+    HYPRE_Complex *hypre_data = (*hypre_x)->data;
+    int data_size = (*hypre_x)->data_size;
+    
+    amps_Printf("DEBUG: hypre_x data_size = %d\n", data_size);
+    for (int idx = 0; idx < data_size; idx++) {
+      amps_Printf("DEBUG: hypre_x->data[%d] = %.15e\n", idx, hypre_data[idx]);
+    }
+  } else {
+    amps_Printf("DEBUG: Could not access hypre_x internal data structure\n");
+  }
 
   ForSubgridI(sg, GridSubgrids(grid))
   {
@@ -114,6 +160,10 @@ void CopyHypreVectorToParflowVector(HYPRE_StructVector* hypre_x,
 
     int iv = SubvectorEltIndex(soln_sub, ix, iy, iz);
 
+    // Debug: Print ParFlow soln subvector metadata
+    amps_Printf("DEBUG: Soln subvector meta: ix=%d iy=%d iz=%d nx=%d ny=%d nz=%d nx_v=%d ny_v=%d nz_v=%d iv=%d\n",
+                ix, iy, iz, nx, ny, nz, nx_v, ny_v, nz_v, iv);
+
     BoxLoopI1(i, j, k, ix, iy, iz, nx, ny, nz,
               iv, nx_v, ny_v, nz_v, 1, 1, 1,
     {
@@ -125,6 +175,15 @@ void CopyHypreVectorToParflowVector(HYPRE_StructVector* hypre_x,
       HYPRE_StructVectorGetValues(*hypre_x, index, &value);
       soln_ptr[iv] = value;
     });
+
+    // Debug: Print entire soln_ptr data after transfer
+    {
+      int soln_size = nx_v * ny_v * nz_v;
+      amps_Printf("DEBUG: Printing full soln_ptr of size %d after transfer:\n", soln_size);
+      for (int idx = 0; idx < soln_size; idx++) {
+        amps_Printf("DEBUG: soln_ptr[%d] = %.15e\n", idx, soln_ptr[idx]);
+      }
+    }
   }
 }
 
@@ -218,7 +277,7 @@ void HypreInitialize(Matrix*              pf_Bmat,
     HYPRE_StructVectorCreate(amps_CommWorld,
                              *hypre_grid,
                              hypre_b);
-    HYPRE_StructVectorSetNumGhost(*hypre_b, no_ghosts);
+    HYPRE_StructVectorSetNumGhost(*hypre_b, full_ghosts);
     HYPRE_StructVectorInitialize(*hypre_b);
   }
 
@@ -242,6 +301,7 @@ void HypreAssembleMatrixAsElements(
                                    ProblemData *       problem_data
                                    )
 {
+  amps_Printf("DEBUG: HypreAssembleMatrixAsElements called\n");
   Grid *mat_grid = MatrixGrid(pf_Bmat);
   double *cp, *wp = NULL, *ep, *sop = NULL, *np, *lp = NULL, *up = NULL;
   double *cp_c, *wp_c = NULL, *ep_c = NULL, *sop_c = NULL, *np_c = NULL, *top_dat;
@@ -517,6 +577,20 @@ void HypreAssembleMatrixAsElements(
   }  /* end if pf_Cmat==NULL */
 
   HYPRE_StructMatrixAssemble(*hypre_mat);
+  
+  // Debug: Print Hypre matrix dimensions
+  amps_Printf("DEBUG: Hypre matrix dimensions:\n");
+  if (*hypre_mat && (*hypre_mat)->data) {
+    amps_Printf("DEBUG: hypre_mat->data_size = %d\n", (*hypre_mat)->data_size);
+    amps_Printf("DEBUG: hypre_mat->num_ghost[0] = %d\n", (*hypre_mat)->num_ghost[0]);
+    amps_Printf("DEBUG: hypre_mat->num_ghost[1] = %d\n", (*hypre_mat)->num_ghost[1]);
+    amps_Printf("DEBUG: hypre_mat->num_ghost[2] = %d\n", (*hypre_mat)->num_ghost[2]);
+    amps_Printf("DEBUG: hypre_mat->num_ghost[3] = %d\n", (*hypre_mat)->num_ghost[3]);
+    amps_Printf("DEBUG: hypre_mat->num_ghost[4] = %d\n", (*hypre_mat)->num_ghost[4]);
+    amps_Printf("DEBUG: hypre_mat->num_ghost[5] = %d\n", (*hypre_mat)->num_ghost[5]);
+  } else {
+    amps_Printf("DEBUG: Could not access Hypre matrix internal structure\n");
+  }
 }
 
 #endif // HAVE_HYPRE

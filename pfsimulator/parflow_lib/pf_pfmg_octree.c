@@ -1013,6 +1013,56 @@ PFModule  *PFMGOctreeInitInstanceXtra(
 
     HYPRE_StructMatrixAssemble(instance_xtra->hypre_mat);
 
+    // Debug: Print ParFlow matrix data before transfer
+    amps_Printf("DEBUG: Printing ParFlow matrix data in pf_pfmg_octree:\n");
+    ForSubgridI(sg, GridSubgrids(mat_grid))
+    {
+      subgrid = GridSubgrid(mat_grid, sg);
+      pfB_sub = MatrixSubmatrix(pf_Bmat, sg);
+      
+      ix = SubgridIX(subgrid);
+      iy = SubgridIY(subgrid);
+      iz = SubgridIZ(subgrid);
+      nx = SubgridNX(subgrid);
+      ny = SubgridNY(subgrid);
+      nz = SubgridNZ(subgrid);
+      nx_m = SubmatrixNX(pfB_sub);
+      ny_m = SubmatrixNY(pfB_sub);
+      nz_m = SubmatrixNZ(pfB_sub);
+      
+      amps_Printf("DEBUG: ParFlow subgrid %d: ix=%d iy=%d iz=%d nx=%d ny=%d nz=%d nx_m=%d ny_m=%d nz_m=%d\n",
+                  sg, ix, iy, iz, nx, ny, nz, nx_m, ny_m, nz_m);
+      
+      // Print matrix coefficients for each stencil direction
+      for (int stencil = 0; stencil < stencil_size; stencil++) {
+        double *values = SubmatrixStencilData(pfB_sub, stencil);
+        int matrix_size = nx_m * ny_m * nz_m;
+        amps_Printf("DEBUG: ParFlow stencil %d coefficients (size %d):\n", stencil, matrix_size);
+        for (int idx = 0; idx < matrix_size; idx++) {
+          amps_Printf("DEBUG: pfB_sub[%d][%d] = %.15e\n", stencil, idx, values[idx]);
+        }
+      }
+    }
+
+    // Debug: Print Hypre matrix data after assembly
+    amps_Printf("DEBUG: Printing Hypre matrix data in pf_pfmg_octree:\n");
+    if (instance_xtra->hypre_mat && instance_xtra->hypre_mat->data) {
+      amps_Printf("DEBUG: hypre_mat->data_size = %d\n", instance_xtra->hypre_mat->data_size);
+      amps_Printf("DEBUG: hypre_mat->num_ghost[0-5] = [%d, %d, %d, %d, %d, %d]\n",
+                  instance_xtra->hypre_mat->num_ghost[0], instance_xtra->hypre_mat->num_ghost[1],
+                  instance_xtra->hypre_mat->num_ghost[2], instance_xtra->hypre_mat->num_ghost[3],
+                  instance_xtra->hypre_mat->num_ghost[4], instance_xtra->hypre_mat->num_ghost[5]);
+      
+      // Print all Hypre matrix data
+      int data_size = instance_xtra->hypre_mat->data_size;
+      amps_Printf("DEBUG: Hypre matrix data (all %d values):\n", data_size);
+      for (int idx = 0; idx < data_size; idx++) {
+        amps_Printf("DEBUG: hypre_mat->data[%d] = %.15e\n", idx, instance_xtra->hypre_mat->data[idx]);
+      }
+    } else {
+      amps_Printf("DEBUG: Could not access Hypre matrix internal structure\n");
+    }
+
     EndTiming(public_xtra->time_index_copy_hypre);
 
     /* Set up the PFMG preconditioner */
