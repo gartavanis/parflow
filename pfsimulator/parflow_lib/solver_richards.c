@@ -235,6 +235,7 @@ typedef struct {
   char *torch_device;                 /* Device for the torch model ("cpu" or "cuda") */
   char *torch_model_dtype;            /* Data type for the torch model */
   int torch_include_ghost_nodes;      /* Include ghost nodes in x and y directions when passing data to torch model */
+  int torch_num_skip_steps;           /* Number of timesteps to skip ParFlow solver when using torch (default: 11, meaning solver runs every 12 steps) */
 } PublicXtra;
 
 typedef struct {
@@ -3291,13 +3292,14 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
       /*          Solve the nonlinear system for this time step          */
       /*******************************************************************/
 
-      /* Only run parflow solver every 12 timesteps when torch accelerator is enabled */
-      if (!public_xtra->enable_torch_accelerator || (instance_xtra->iteration_number % 12) == 0)
+      /* Only run parflow solver every N timesteps when torch accelerator is enabled */
+      /* N = torch_num_skip_steps + 1 (e.g., if torch_num_skip_steps=11, solver runs every 12 steps) */
+      if (!public_xtra->enable_torch_accelerator || (instance_xtra->iteration_number % (public_xtra->torch_num_skip_steps + 1)) == 0)
       {
         if (!amps_Rank(amps_CommWorld))
         {
-          amps_Printf("Calling ParFlow solver at timestep %d (every 12 timesteps)\n", 
-                      instance_xtra->iteration_number);
+          amps_Printf("Calling ParFlow solver at timestep %d (every %d timesteps)\n", 
+                      instance_xtra->iteration_number, public_xtra->torch_num_skip_steps + 1);
         }
         retval = PFModuleInvokeType(NonlinSolverInvoke, nonlin_solver,
                                     (instance_xtra->pressure,
@@ -6579,6 +6581,9 @@ SolverRichardsNewPublicXtra(char *name)
   switch_name = GetStringDefault(key, "False");
   switch_value = NA_NameToIndexExitOnError(switch_na, switch_name, key);
   public_xtra->torch_include_ghost_nodes = switch_value;
+
+  sprintf(key, "%s.TorchNumSkipSteps", name);
+  public_xtra->torch_num_skip_steps = GetIntDefault(key, 0);
 #endif
 
   NA_FreeNameArray(switch_na);

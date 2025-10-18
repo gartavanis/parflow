@@ -2703,6 +2703,19 @@ Solver:
       BoolDomain:
       RequiresModule: TORCH
 
+  TorchNumSkipSteps:
+    help: >
+      [Type: int] This key specifies the number of timesteps to skip between ParFlow solver calls when the Torch ML Accelerator is enabled.
+      During the skipped timesteps, only the torch model is called to predict pressure. The ParFlow solver runs every (TorchNumSkipSteps + 1) timesteps.
+      For example, a value of 0 means the ParFlow solver runs at every timestep (along with torch), a value of 11 (default) means the solver runs
+      every 12 timesteps, and a value of 23 means the solver runs every 24 timesteps. This allows users to balance computational cost with accuracy
+      when using the ML accelerator. Note that the Torch library must be compiled and linked at runtime for this option to be active.
+    default: 0
+    domains:
+      IntValue:
+        min_value: 0
+      RequiresModule: TORCH
+
   # PDI outputs
   WritePDISubsurfData:
     help: >
