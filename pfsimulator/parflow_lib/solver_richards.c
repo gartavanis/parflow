@@ -3326,10 +3326,12 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
       }
       else
       {
-        amps_Printf("Skipping ParFlow solver at timestep %d (using torch model)\n", 
-                    instance_xtra->iteration_number);
+        if (!amps_Rank(amps_CommWorld))
+        {
+          amps_Printf("Skipping ParFlow solver at timestep %d (using torch model)\n", 
+                      instance_xtra->iteration_number);
+        }
         converged = 1;
-        retval = 0;
       }
       
       if (conv_failures >= max_failures)
