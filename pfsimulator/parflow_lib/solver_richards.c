@@ -3291,31 +3291,47 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
       /*          Solve the nonlinear system for this time step          */
       /*******************************************************************/
 
-      retval = PFModuleInvokeType(NonlinSolverInvoke, nonlin_solver,
-                                  (instance_xtra->pressure,
-                                   instance_xtra->density,
-                                   instance_xtra->old_density,
-                                   instance_xtra->saturation,
-                                   instance_xtra->old_saturation,
-                                   t, dt,
-                                   problem_data,
-                                   instance_xtra->old_pressure,
-                                   evap_trans,
-                                   instance_xtra->ovrl_bc_flx,
-                                   instance_xtra->x_velocity,
-                                   instance_xtra->y_velocity,
-                                   instance_xtra->z_velocity));
-
-      if (retval != 0)
+      /* Only run parflow solver every 12 timesteps when torch accelerator is enabled */
+      if (!public_xtra->enable_torch_accelerator || (instance_xtra->iteration_number % 12) == 0)
       {
-        converged = 0;
-        conv_failures++;
+        if (!amps_Rank(amps_CommWorld))
+        {
+          amps_Printf("Calling ParFlow solver at timestep %d (every 12 timesteps)\n", 
+                      instance_xtra->iteration_number);
+        }
+        retval = PFModuleInvokeType(NonlinSolverInvoke, nonlin_solver,
+                                    (instance_xtra->pressure,
+                                     instance_xtra->density,
+                                     instance_xtra->old_density,
+                                     instance_xtra->saturation,
+                                     instance_xtra->old_saturation,
+                                     t, dt,
+                                     problem_data,
+                                     instance_xtra->old_pressure,
+                                     evap_trans,
+                                     instance_xtra->ovrl_bc_flx,
+                                     instance_xtra->x_velocity,
+                                     instance_xtra->y_velocity,
+                                     instance_xtra->z_velocity));
+
+        if (retval != 0)
+        {
+          converged = 0;
+          conv_failures++;
+        }
+        else
+        {
+          converged = 1;
+        }
       }
       else
       {
+        amps_Printf("Skipping ParFlow solver at timestep %d (using torch model)\n", 
+                    instance_xtra->iteration_number);
         converged = 1;
+        retval = 0;
       }
-
+      
       if (conv_failures >= max_failures)
       {
         take_more_time_steps = 0;
