@@ -3231,7 +3231,9 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
         Subgrid *subgrid;
         Grid *grid = VectorGrid(evap_trans_sum);
         Subvector *p_sub;
+        Subvector *vx_sub, *vy_sub, *vz_sub;
         double *pp;
+        double *velx, *vely, *velz;
         int is, nx, ny, nz;
 
         ForSubgridI(is, GridSubgrids(grid))
@@ -3244,7 +3246,17 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
           pp = SubvectorData(p_sub);
           et_sub = VectorSubvector(evap_trans, is);
           et = SubvectorData(et_sub);
-          SubvectorData(p_sub) = predict_next_pressure_step(pp, et, nx, ny, nz, instance_xtra->file_number, public_xtra->torch_debug, public_xtra->torch_include_ghost_nodes);
+          amps_Printf(">>>>>>>>>> et nx: %d ny: %d nz: %d\n", SubvectorNX(et_sub), SubvectorNY(et_sub), SubvectorNZ(et_sub));
+          vx_sub = VectorSubvector(instance_xtra->x_velocity, is);
+          amps_Printf(">>>>>>>>>> vx_sub nx: %d ny: %d nz: %d\n", SubvectorNX(vx_sub), SubvectorNY(vx_sub), SubvectorNZ(vx_sub));
+          velx = SubvectorData(vx_sub);
+          vy_sub = VectorSubvector(instance_xtra->y_velocity, is);
+          amps_Printf(">>>>>>>>>> vy_sub nx: %d ny: %d nz: %d\n", SubvectorNX(vy_sub), SubvectorNY(vy_sub), SubvectorNZ(vy_sub));
+          vely = SubvectorData(vy_sub);
+          vz_sub = VectorSubvector(instance_xtra->z_velocity, is);
+          amps_Printf(">>>>>>>>>> vz_sub nx: %d ny: %d nz: %d\n", SubvectorNX(vz_sub), SubvectorNY(vz_sub), SubvectorNZ(vz_sub));
+          velz = SubvectorData(vz_sub);
+          SubvectorData(p_sub) = predict_next_pressure_step(pp, et, velx, vely, velz, nx, ny, nz, instance_xtra->file_number, public_xtra->torch_debug, public_xtra->torch_include_ghost_nodes);
         }
         handle = InitVectorUpdate(instance_xtra->pressure, VectorUpdateAll);
         FinalizeVectorUpdate(handle);
