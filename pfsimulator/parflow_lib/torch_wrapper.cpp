@@ -142,8 +142,7 @@ extern "C" {
     
     press = model.run_method("get_parflow_pressure", press).toTensor();
     evaptrans = model.run_method("get_parflow_evaptrans", evaptrans).toTensor();
-    velocities = velocities.unsqueeze(0);
-    velocities = model.run_method("scale_velocity", velocities).toTensor();
+    velocities = model.run_method("get_parflow_velocities", velocities).toTensor();
 
     if (torch_debug) {
       char filename[64];
