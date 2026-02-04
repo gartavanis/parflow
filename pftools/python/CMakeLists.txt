@@ -36,6 +36,7 @@ add_custom_command(
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/data/forsyth5.out.press.00001.pfb"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/pfb_summary.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/test_pf_xarray.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/test_clm_restart.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/__init__.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/builders.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/compare.py"
@@ -128,3 +129,14 @@ add_custom_target(PythonPublishPackage
   DEPENDS
     PythonCreatePackage
 )
+
+# -----------------------------------------------------------------------------
+# Add Python tests to ctest
+# -----------------------------------------------------------------------------
+
+if (PARFLOW_ENABLE_PYTHON)
+  include(ParflowTest)
+  
+  # Add CLM restart tests
+  pf_add_py_test(parflow/tools/tests/test_clm_restart)
+endif()
