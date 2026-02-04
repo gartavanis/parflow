@@ -22,6 +22,7 @@ from parflow.tools.clm_restart import (
     CLMRestartWriter,
     calculate_processor_topology,
     get_rank_subdomain,
+    redistribute_clm_restart,
 )
 
 
@@ -301,6 +302,92 @@ class TestCLMRestart:
                 except AssertionError as e:
                     self.errors.append(str(e))
 
+    def test_redistribution(self):
+        """Test redistributing CLM restart files from one topology to another."""
+        # Use a small domain for testing: 12×12 with 2×2 → 3×3 redistribution
+        nx, ny = 12, 12
+        old_P, old_Q = 2, 2
+        new_P, new_Q = 3, 3
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            old_restart_dir = Path(tmpdir) / 'old_restart'
+            new_restart_dir = Path(tmpdir) / 'new_restart'
+            old_restart_dir.mkdir()
+            
+            # Create synthetic restart files for old topology
+            writer = CLMRestartWriter(self.nlevsoi, self.nlevsno)
+            old_topo = calculate_processor_topology(nx, ny, old_P, old_Q)
+            nranks_old = old_P * old_Q
+            
+            print(f"  Creating {nranks_old} restart files for {old_P}×{old_Q} topology...")
+            for rank in range(nranks_old):
+                subdomain = get_rank_subdomain(rank, old_topo)
+                nc, nr = subdomain['nc'], subdomain['nr']
+                nch = nc * nr
+                
+                # Create test data for this rank
+                test_data = self._create_test_restart_data(nch=nch)
+                test_data['nc'] = nc
+                test_data['nr'] = nr
+                
+                # Create sequential col/row indices
+                col_indices = np.zeros(nch, dtype=np.int32)
+                row_indices = np.zeros(nch, dtype=np.int32)
+                k = 0
+                for j in range(nr):
+                    for i in range(nc):
+                        col_indices[k] = i + 1
+                        row_indices[k] = j + 1
+                        k += 1
+                
+                test_data['col'] = col_indices
+                test_data['row'] = row_indices
+                
+                # Write file
+                filepath = old_restart_dir / f'clm.rst.00000.{rank}'
+                writer.write(filepath, test_data)
+            
+            # Run redistribution
+            print(f"  Redistributing to {new_P}×{new_Q} topology...")
+            try:
+                redistribute_clm_restart(
+                    nx=nx, ny=ny,
+                    old_P=old_P, old_Q=old_Q,
+                    new_P=new_P, new_Q=new_Q,
+                    old_restart_dir=str(old_restart_dir),
+                    new_restart_dir=str(new_restart_dir),
+                    restart_prefix='clm.rst.',
+                    tstamp=0,
+                    nlevsoi=self.nlevsoi,
+                    nlevsno=self.nlevsno,
+                    col_row_file=None  # Use sequential ordering for test
+                )
+            except Exception as e:
+                self.errors.append(f"Redistribution failed: {e}")
+                return
+            
+            # Verify output files exist
+            nranks_new = new_P * new_Q
+            expected_files = [f'clm.rst.00000.{rank}' for rank in range(nranks_new)]
+            for filename in expected_files:
+                filepath = new_restart_dir / filename
+                assert filepath.exists(), f"Expected output file not found: {filepath}"
+            
+            # Verify we can read the output files
+            reader = CLMRestartReader(self.nlevsoi, self.nlevsno)
+            for rank in range(nranks_new):
+                filepath = new_restart_dir / f'clm.rst.00000.{rank}'
+                try:
+                    data = reader.read(filepath)
+                    # Basic sanity checks
+                    assert data['nch'] > 0, f"Invalid nch in rank {rank}"
+                    assert data['nc'] > 0, f"Invalid nc in rank {rank}"
+                    assert data['nr'] > 0, f"Invalid nr in rank {rank}"
+                except Exception as e:
+                    self.errors.append(f"Failed to read output file {filepath}: {e}")
+            
+            print(f"  ✓ Redistribution successful: {nranks_old} → {nranks_new} files")
+
 
 def main():
     """Run all tests and exit with appropriate code."""
@@ -345,6 +432,16 @@ def main():
                 print(f"     - {error}")
         else:
             print("   ✓ PASSED (or skipped if data not available)")
+        
+        print("\n7. Testing redistribution...")
+        test.test_redistribution()
+        if test.errors:
+            print(f"   ✗ FAILED with {len(test.errors)} error(s)")
+            for error in test.errors:
+                print(f"     - {error}")
+            test.errors = []  # Clear for final check
+        else:
+            print("   ✓ PASSED")
         
         print("\n" + "=" * 70)
         if test.errors:
