@@ -204,13 +204,6 @@ for file_path in input_path.iterdir():
     if file_path.is_file():
         cp(str(file_path), restart_second_dir)
 
-# Rename drv_clmin_restart.dat to drv_clmin.dat for restart
-drv_clmin_restart_path = os.path.join(restart_second_dir, "drv_clmin_restart.dat")
-drv_clmin_path = os.path.join(restart_second_dir, "drv_clmin.dat")
-if os.path.exists(drv_clmin_restart_path):
-    os.rename(drv_clmin_restart_path, drv_clmin_path)
-    print(f"Renamed drv_clmin_restart.dat to drv_clmin.dat in restart directory")
-
 # Copy redistributed restart files
 for rst_file in glob.glob(os.path.join(new_restart_dir, 'clm.rst.*')):
     cp(rst_file, restart_second_dir)
