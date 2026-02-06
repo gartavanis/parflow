@@ -81,6 +81,14 @@ if(${PARFLOW_HAVE_NETCDF})
   endif()
 endif()
 
+if(${PARFLOW_HAVE_CLM})
+  if(${PARFLOW_HAVE_HYPRE})
+    list(APPEND TESTS
+      clm_restart_real_data
+        )
+  endif()
+endif()
+
 set(SAMRAI_TESTS)
 set(SAMRAI_TESTS_WITH_PATCH_COUNT)
 
