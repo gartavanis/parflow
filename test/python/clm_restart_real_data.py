@@ -186,13 +186,79 @@ restart_first_run.run(working_directory=restart_first_dir)
 print("First 24 hours complete")
 
 # -----------------------------------------------------------------------------
-# Redistribute CLM restart files from 1x1 to 2x2 topology
+# Generate reference 2x2 run to extract tile ordering (col_new.txt, row_new.txt)
 # -----------------------------------------------------------------------------
 
+# Create new_restart_dir early so we can store col_new.txt and row_new.txt there
 restart_timestamp = 24
 old_restart_dir = restart_first_dir
 new_restart_dir = get_absolute_path(f"test_output/{run_name}_restart_2x2")
 mkdir(new_restart_dir)
+
+print("Generating reference 2x2 run to extract tile ordering...")
+reference_2x2_dir = get_absolute_path(f"test_output/{run_name}_reference_2x2")
+mkdir(reference_2x2_dir)
+
+# Copy all input files to reference directory
+for file_path in input_path.iterdir():
+    if file_path.is_file():
+        cp(str(file_path), reference_2x2_dir)
+
+# Create reference run from YAML
+reference_script_path = os.path.join(reference_2x2_dir, "clm_restart_run.yaml")
+reference_run = Run.from_definition(reference_script_path)
+reference_run.set_name("reference_2x2_run")
+
+# Set keys for reference run (2x2 topology, 24 hours)
+reference_run.TimingInfo.StopTime = 24
+reference_run.Solver.CLM.MetFileName = 'CW3E'
+reference_run.Solver.CLM.MetFilePath = '.'
+reference_run.Solver.Linear.Preconditioner = "PFMGOctree"
+reference_run.Process.Topology.P = 2
+reference_run.Process.Topology.Q = 2
+reference_run.Process.Topology.R = 1
+
+# Distribute PFB files for reference run
+for pfb_file in pfb_files_to_distribute:
+    pfb_path = os.path.join(reference_2x2_dir, pfb_file)
+    if os.path.exists(pfb_path):
+        reference_run.dist(pfb_path)
+
+# Distribute CW3E forcing files for first 24 hours
+for cw3e_file in cw3e_files_first24:
+    cw3e_path = os.path.join(reference_2x2_dir, cw3e_file)
+    if os.path.exists(cw3e_path):
+        reference_run.dist(cw3e_path)
+
+# Run reference 2x2 topology for 24 hours
+print("Running reference 2x2 topology run (24 hours)...")
+reference_run.run(working_directory=reference_2x2_dir)
+print("Reference 2x2 run complete")
+
+# Extract col_new.txt and row_new.txt from reference restart files
+print("Extracting tile ordering from reference 2x2 restart files...")
+col_new_file = os.path.join(new_restart_dir, 'col_new.txt')
+row_new_file = os.path.join(new_restart_dir, 'row_new.txt')
+
+reader = CLMRestartReader(nlevsoi, nlevsno)
+nranks_new = 4  # 2x2 = 4 ranks
+
+with open(col_new_file, 'w') as col_f, open(row_new_file, 'w') as row_f:
+    for rank in range(nranks_new):
+        rst_file = os.path.join(reference_2x2_dir, f'clm.rst.00000.{rank}')
+        if os.path.exists(rst_file):
+            data = reader.read(rst_file)
+            col_f.write(' '.join(map(str, data['col'])) + '\n')
+            row_f.write(' '.join(map(str, data['row'])) + '\n')
+            print(f"  Extracted tile ordering from rank {rank}: {len(data['col'])} tiles")
+        else:
+            raise RuntimeError(f"Reference restart file not found: {rst_file}")
+
+print(f"Generated {col_new_file} and {row_new_file}")
+
+# -----------------------------------------------------------------------------
+# Redistribute CLM restart files from 1x1 to 2x2 topology
+# -----------------------------------------------------------------------------
 
 # Debug: Check original restart file sizes and structure
 # ParFlow may write restart files with different timestamp - check all clm.rst files
@@ -248,7 +314,7 @@ redistribute_clm_restart(
     tstamp=0,
     nlevsoi=nlevsoi,
     nlevsno=nlevsno,
-    col_row_file=None  # Use sequential ordering
+    col_row_file=(col_new_file, row_new_file)  # Use tile ordering from reference 2x2 run
 )
 print("CLM restart files redistributed")
 
