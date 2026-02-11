@@ -269,8 +269,37 @@ class CLMRestartWriter:
             filepath: Path for output file
             data: Dictionary with all restart data
         """
+        import json
+        import os
+        DEBUG_LOG_PATH = "/home/ga6/workspace/parflow/.cursor/debug.log"
+        
         filepath = Path(filepath)
         filepath.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Debug: Log data structure before writing
+        nlayers_dz = self.nlevsoi + self.nlevsno
+        nlayers_zi = nlayers_dz + 1
+        debug_data = {
+            "file": str(filepath),
+            "nch": data.get('nch', 0),
+            "dz_shape": data.get('dz', np.array([])).shape if 'dz' in data else None,
+            "zi_shape": data.get('zi', np.array([])).shape if 'zi' in data else None,
+            "expected_dz_layers": nlayers_dz,
+            "expected_zi_layers": nlayers_zi
+        }
+        try:
+            with open(DEBUG_LOG_PATH, 'a') as logf:
+                logf.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "C",
+                    "location": "clm_restart.py:264",
+                    "message": "Writer: data structure before write",
+                    "data": debug_data,
+                    "timestamp": 0
+                }) + '\n')
+        except:
+            pass
 
         with open(filepath, 'wb') as f:
             # Header (10 integers)
@@ -318,8 +347,32 @@ class CLMRestartWriter:
                 self._write_fortran_record(f, data['z'][:, l], 'd')
 
             # zi
+            zi_layers_written = 0
             for l in range(nlayers_zi):
                 self._write_fortran_record(f, data['zi'][:, l], 'd')
+                zi_layers_written += 1
+            
+            # Debug: Log zi layers written (inside with block, before other layers)
+            try:
+                current_pos = f.tell()
+                with open(DEBUG_LOG_PATH, 'a') as logf:
+                    logf.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "F",
+                        "location": "clm_restart.py:353",
+                        "message": "Writer: zi layers written (mid-write)",
+                        "data": {
+                            "file": str(filepath),
+                            "zi_layers_written": zi_layers_written,
+                            "expected_zi_layers": nlayers_zi,
+                            "zi_shape": list(data['zi'].shape) if 'zi' in data else None,
+                            "file_position_after_zi": current_pos
+                        },
+                        "timestamp": 0
+                    }) + '\n')
+            except:
+                pass
 
             # t_soisno
             for l in range(nlayers_dz):
@@ -332,6 +385,38 @@ class CLMRestartWriter:
             # h2osoi_ice
             for l in range(nlayers_dz):
                 self._write_fortran_record(f, data['h2osoi_ice'][:, l], 'd')
+            
+            # Explicitly flush and sync before closing
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except (AttributeError, OSError):
+                pass  # Some file objects don't support fsync
+        
+        # File is now closed by 'with' statement
+        
+        # Debug: Log file size after writing (file is now closed)
+        file_size = filepath.stat().st_size
+        try:
+            with open(DEBUG_LOG_PATH, 'a') as logf:
+                logf.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "C",
+                    "location": "clm_restart.py:365",
+                    "message": "Writer: file size after write (complete)",
+                    "data": {
+                        "file": str(filepath),
+                        "size": file_size,
+                        "nch": data.get('nch', 0),
+                        "nlayers_dz": nlayers_dz,
+                        "nlayers_zi": nlayers_zi,
+                        "expected_records": 1 + 1 + 1 + 14 + 1 + 4 + 4 + 5 + 4 + 4 + 4  # Total Fortran records
+                    },
+                    "timestamp": 0
+                }) + '\n')
+        except:
+            pass
 
 
 # ============================================================================
@@ -690,6 +775,31 @@ def _write_new_distribution(topology, restart_dir, prefix, tstamp, global_data, 
                 restart_data[field] = np.zeros((nch, nlayers + 1))
             else:
                 restart_data[field] = np.zeros((nch, nlayers))
+        
+        # Debug: Log data structure initialization
+        import json
+        import os
+        DEBUG_LOG_PATH = "/home/ga6/workspace/parflow/.cursor/debug.log"
+        try:
+            with open(DEBUG_LOG_PATH, 'a') as logf:
+                logf.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "D",
+                    "location": "clm_restart.py:693",
+                    "message": "Redistribution: data structure initialized",
+                    "data": {
+                        "rank": rank,
+                        "nch": nch,
+                        "nlayers": nlayers,
+                        "zi_shape": restart_data['zi'].shape,
+                        "dz_shape": restart_data['dz'].shape if 'dz' in restart_data else None,
+                        "global_zi_shape": global_data['layer']['zi'].shape if 'zi' in global_data['layer'] else None
+                    },
+                    "timestamp": 0
+                }) + '\n')
+        except:
+            pass
 
         # Fill from global arrays using col/row indices
         for k in range(nch):
@@ -710,6 +820,54 @@ def _write_new_distribution(topology, restart_dir, prefix, tstamp, global_data, 
             for field in global_data['layer'].keys():
                 restart_data[field][k, :] = \
                     global_data['layer'][field][col_global, row_global, :]
+        
+        # Debug: Log data after extraction, before write
+        try:
+            with open(DEBUG_LOG_PATH, 'a') as logf:
+                logf.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "D",
+                    "location": "clm_restart.py:713",
+                    "message": "Redistribution: data extracted, before write",
+                    "data": {
+                        "rank": rank,
+                        "nch": nch,
+                        "zi_shape": restart_data['zi'].shape,
+                        "zi_nonzero": int(np.count_nonzero(restart_data['zi'])),
+                        "dz_shape": restart_data['dz'].shape if 'dz' in restart_data else None
+                    },
+                    "timestamp": 0
+                }) + '\n')
+        except:
+            pass
 
         # Write file
         writer.write(filepath, restart_data)
+        
+        # Verify file was written correctly by attempting to read it back
+        try:
+            reader = CLMRestartReader(writer.nlevsoi, writer.nlevsno)
+            verify_data = reader.read(filepath)
+            if verify_data['nch'] != nch:
+                raise ValueError(f"Verification failed: expected nch={nch}, got {verify_data['nch']}")
+            if verify_data['zi'].shape[1] != writer.nlevsoi + writer.nlevsno + 1:
+                raise ValueError(f"Verification failed: expected zi layers={writer.nlevsoi + writer.nlevsno + 1}, got {verify_data['zi'].shape[1]}")
+        except Exception as e:
+            import json
+            import os
+            DEBUG_LOG_PATH = "/home/ga6/workspace/parflow/.cursor/debug.log"
+            try:
+                with open(DEBUG_LOG_PATH, 'a') as logf:
+                    logf.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "G",
+                        "location": "clm_restart.py:842",
+                        "message": "File verification failed after write",
+                        "data": {"file": str(filepath), "error": str(e), "rank": rank},
+                        "timestamp": 0
+                    }) + '\n')
+            except:
+                pass
+            raise
