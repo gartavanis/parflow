@@ -85,6 +85,7 @@ if(${PARFLOW_HAVE_CLM})
   if(${PARFLOW_HAVE_HYPRE})
     list(APPEND TESTS
       clm_restart_real_data
+      test_redistribution_round_trip
         )
   endif()
 endif()
