@@ -37,6 +37,7 @@ add_custom_command(
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/pfb_summary.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/test_pf_xarray.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/test_clm_restart.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/tests/examine_et_at_42_82.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/__init__.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/builders.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/parflow/tools/compare.py"
@@ -139,4 +140,5 @@ if (PARFLOW_ENABLE_PYTHON)
   
   # Add CLM restart tests
   pf_add_py_test(parflow/tools/tests/test_clm_restart)
+  pf_add_py_test(parflow/tools/tests/examine_et_at_42_82)
 endif()
