@@ -50,6 +50,34 @@ CLM_OUTPUT_VARIABLES = (
 QFLX_EVAP_TOT_INDEX = CLM_OUTPUT_VARIABLES.index("qflx_evap_tot")
 
 
+def global_to_local_2x2(i_glob, j_glob, nx=107, ny=89, p=2, q=2):
+    """
+    Map global grid indices (i_glob, j_glob) to local (col,row) indices
+    for a 2x2 (P=2, Q=2) decomposition of an nx-by-ny domain, using the
+    standard ParFlow block partition rule.
+    """
+    # X-direction partition
+    base_x = nx // p
+    rem_x = nx % p
+    # First rem_x ranks get one extra cell
+    if i_glob <= base_x + (1 if rem_x > 0 else 0):
+        ix_start = 1
+    else:
+        ix_start = base_x + (1 if rem_x > 0 else 0) + 1
+
+    # Y-direction partition
+    base_y = ny // q
+    rem_y = ny % q
+    if j_glob <= base_y + (1 if rem_y > 0 else 0):
+        iy_start = 1
+    else:
+        iy_start = base_y + (1 if rem_y > 0 else 0) + 1
+
+    col_local = i_glob - ix_start + 1
+    row_local = j_glob - iy_start + 1
+    return col_local, row_local
+
+
 def find_tile_at(data, col_val, row_val):
     """Return tile index (0-based) where col==col_val and row==row_val (1-based)."""
     col = data["col"]
@@ -164,7 +192,9 @@ def main():
     if dummy_label:
         print("--- Dummy / initial restart ---")
         print("File:", dummy_label)
-        print_restart_at(dummy_data, "dummy", I, J)
+        # Dummy run uses 2x2 topology; map global (I,J) to local tile indices
+        col_dummy, row_dummy = global_to_local_2x2(I, J)
+        print_restart_at(dummy_data, "dummy", col_dummy, row_dummy)
         print()
     else:
         print("No dummy restart file found under", DUMMY_RST_DIR)
