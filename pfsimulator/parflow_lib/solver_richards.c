@@ -1971,6 +1971,55 @@ SetupRichards(PFModule * this_module)
   }                             /* End if take_more_time_steps */
 }
 
+#ifdef PARFLOW_HAVE_TORCH
+/*--------------------------------------------------------------------------
+ * LogTorchEmulatorRun
+ *
+ * Append one row per subgrid when the torch emulator runs on this rank.
+ * Each MPI rank writes to its own CSV file.
+ *--------------------------------------------------------------------------*/
+static void
+LogTorchEmulatorRun(int rank,
+                    int iteration,
+                    double t,
+                    double dt,
+                    int file_number,
+                    int subgrid_index,
+                    int n_will_fill,
+                    int n_active,
+                    double fraction_cells_will_fill,
+                    double threshold)
+{
+  static FILE *log_file = NULL;
+  char fname[PATH_MAX];
+
+  if (!log_file)
+  {
+    snprintf(fname, sizeof(fname), "torch_emulator_log_rank%04d.csv", rank);
+    log_file = fopen(fname, "a");
+    if (!log_file)
+    {
+      amps_Printf("Warning: could not open torch emulator log %s\n", fname);
+      return;
+    }
+
+    fseek(log_file, 0, SEEK_END);
+    if (ftell(log_file) == 0)
+    {
+      fprintf(log_file,
+              "iteration,t,dt,file_number,rank,subgrid,n_cells_will_fill,"
+              "n_active_surface_cells,fraction_cells_will_fill,threshold\n");
+    }
+  }
+
+  fprintf(log_file,
+          "%d,%.16e,%.16e,%d,%d,%d,%d,%d,%.16e,%.16e\n",
+          iteration, t, dt, file_number, rank, subgrid_index,
+          n_will_fill, n_active, fraction_cells_will_fill, threshold);
+  fflush(log_file);
+}
+#endif
+
 void
 AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time */
                 double stop_time,       /* Stopping time */
@@ -3299,15 +3348,19 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
         Subvector *p_sub, *et_sub;
         double *pp, *et;
         int is, nx, ny, nz;
+        int rank = amps_Rank(amps_CommWorld);
+        const double torch_fill_fraction_threshold = 0.005;
 #ifdef HAVE_CLM
         GrGeomSolid *gr_domain = ProblemDataGrDomain(problem_data);
         Vector *top = ProblemDataIndexOfDomainTop(problem_data);
-        const double torch_fill_fraction_threshold = 0.005;
 #endif
 
         ForSubgridI(is, GridSubgrids(grid))
         {
           int skip_torch = 0;
+          int n_will_fill = -1;
+          int n_active = -1;
+          double fraction_cells_will_fill = -1.0;
 
           subgrid = GridSubgrid(grid, is);
           p_sub = VectorSubvector(instance_xtra->pressure, is);
@@ -3349,8 +3402,8 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
             int sub_nz = SubgridNZ(subgrid);
             double dz = SubgridDZ(subgrid);
 
-            int n_will_fill = 0;
-            int n_active = 0;
+            n_will_fill = 0;
+            n_active = 0;
             int i, j, k;
 
             GrGeomInLoop(i, j, k, gr_domain, r, ix, iy, iz, sub_nx, sub_ny, sub_nz,
@@ -3381,9 +3434,11 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
               }
             });
 
+            fraction_cells_will_fill =
+              (n_active > 0) ? ((double)n_will_fill / (double)n_active) : 0.0;
+
             if (n_active == 0
-                || ((double)n_will_fill / (double)n_active)
-                   <= torch_fill_fraction_threshold)
+                || fraction_cells_will_fill <= torch_fill_fraction_threshold)
             {
               skip_torch = 1;
             }
@@ -3396,6 +3451,16 @@ AdvanceRichards(PFModule * this_module, double start_time,      /* Starting time
                                                                 instance_xtra->file_number,
                                                                 public_xtra->torch_debug,
                                                                 public_xtra->torch_include_ghost_nodes);
+            LogTorchEmulatorRun(rank,
+                                instance_xtra->iteration_number,
+                                t,
+                                dt,
+                                instance_xtra->file_number,
+                                is,
+                                n_will_fill,
+                                n_active,
+                                fraction_cells_will_fill,
+                                torch_fill_fraction_threshold);
           }
         }
         handle = InitVectorUpdate(instance_xtra->pressure, VectorUpdateAll);
