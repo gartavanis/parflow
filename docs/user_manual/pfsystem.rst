@@ -23,18 +23,18 @@ the general approach for defining a domain
 (:ref:`Defining a domain`) and simulating a real watershed
 (:ref:`Defining a Real domain`).
 
-The “main" ParFlow input file is one of the following: a ``.tcl`` TCL script, a ``.py`` Python script, or a ``.ipynb`` JuPyter notebook. 
-This input script or notebook is used some special routines in PFTools to create 
+The “main" ParFlow input file is a ``.py`` Python script, or a ``.ipynb`` JuPyter notebook. 
+This input script or notebook uses special routines in PFTools to create 
 a database which is used as the input for ParFlow.  This database has the extension ``.pfidb`` and is the database of keys that ParFlow needs to define a run. 
 See :ref:`Main Input Files (.tcl, .py, .ipynb)` and :ref:`ParFlow Input Keys` for details on the format of 
 these files. The input values into ParFlow 
 are defined by a key/value pair and are listed in :ref:`ParFlow Input Keys`. For each key you provide the 
-associated value using either the ``pfset`` command in TCL or associated it with a named run (we use *<runname>* in this manual to denote that) inside the input script.
+associated value is associated with a named run (we use *<runname>* in this manual to denote that) inside the input script.
 
-Since the input file is a script or notebook you can use any feature of TCL or Python to
-define the problem and to postprocess your run. This manual will make no effort to teach TCL or Python so
+Since the input file is a script or notebook you can use any feature of Python to
+define the problem and to postprocess your run. This manual will make no effort to teach Python so
 refer to one of the available manuals or the wealth of online content for more information. This is NOT
-required, you can get along fine without understanding TCL or Python.
+required, you can get along fine without understanding Python.
 
 Looking at the example programs in the :ref:`Test Directory` and 
 going through the annotated input scripts included in this 
@@ -56,7 +56,7 @@ Alternatively, the topography can be specified using ``.pfb``
 files of the slopes in the x and y directions.
 
 Regardless of the approach the user must set the computational grid
-within the ``.pfb`` script as follows:
+within a python script as follows:
 
 .. container:: list
 
@@ -65,41 +65,35 @@ within the ``.pfb`` script as follows:
       #-----------------------------------------------------------------------------
       # Computational Grid
       #-----------------------------------------------------------------------------
-      pfset ComputationalGrid.Lower.X                -10.0
-      pfset ComputationalGrid.Lower.Y                 10.0
-      pfset ComputationalGrid.Lower.Z                  1.0
-       
-      pfset ComputationalGrid.DX                       8.89
-      pfset ComputationalGrid.DY                      10.67
-      pfset ComputationalGrid.DZ                       1.0
-       
-      pfset ComputationalGrid.NX                      18
-      pfset ComputationalGrid.NY                      15
-      pfset ComputationalGrid.NZ                       8
+      import parflow
+      run = parflow.Run("test_run", __file__)
+      run.ComputationalGrid.Lower.X = -10.0
+      run.ComputationalGrid.Lower.Y = 10.0
+      run.ComputationalGrid.Lower.Z = 1.0
 
-The value is normally a single string, double, or integer. In some
+      run.ComputationalGrid.DX = 8.89
+      run.ComputationalGrid.DY = 10.67
+      run.ComputationalGrid.DZ = 1.0
+
+      run.ComputationalGrid.NX = 18
+      run.ComputationalGrid.NY = 15
+      run.ComputationalGrid.NZ = 8
+
+The value of a key is normally a single string, double, or integer. In some
 cases, in particular for a list of names, you need to supply a space
-separated sequence. This can be done using either a double quote or
-braces.
+separated sequence such as "left right front back bottom top" as shown below.
+
+Note: to set Geom.domain you need to add "domain" as a GeomNames first
+and to set GeomInput.domain_input you need to add "domain_input" as Names first.
 
 .. container:: list
 
    ::
 
-      pfset Geom.domain.Patches "left right front back bottom top"
-
-      pfset Geom.domain.Patches {left right front back bottom top}
-
-For commands longer than a single line, the TCL continuation character
-can be used,
-
-.. container:: list
-
-   ::
-
-      pfset Geom.domain.Patches "very_long_name_1 very_long_name_2 very_long_name_3 \
-                                 very_long_name_4 very_long_name_5 very_long_name_6"
-
+      run.GeomInput.Names = ["domain_input"]
+      run.GeomInput.domain_input.InputType = "Box"
+      run.GeomInput.domain_input.GeomNames = ["domain"]
+      run.Geom.domain.Patches = "left right front back bottom top"
 .. _Defining a Real domain:
 
 Setting Up a Real Domain
@@ -135,19 +129,18 @@ The general approach is as follows:
    2. Create consistent gridded layers that are all clipped to your domain
    and have the same number of grid cells
 
-   3. Convert gridded files to ``.pfb`` (:ref:`ParFlow Binary Files (.pfb)`). 
-   One way to accomplish this is by reformatting the gridded outputs to the 
-   correct ParFlow ``.sa`` order (:ref:`ParFlow Simple ASCII Files (.sa and .sb)`) 
-   and to convert the ``.sa`` file to ``.pfb`` using the conversion tools 
-   (see :ref:`common_pftcl` Example 1). If you have an elevation file 
-   in ``.pfb`` format, you may wish to preserve it as provenance for the slopes
-   and for use in post-processing tools. You may point ParFlow to the elevation:
+   3. Input datasets can be specified as ``.pfb`` (:ref:`ParFlow Binary Files (.pfb)`) files.
+   You can create a .pfb file from a numpy array using the the parflow.write_pfb() function.
+   Or you can get pfb files from tools such as `hf_hydrodata <https://hf-hydrodata.readthedocs.io/>`_ or `subsettools <https://hydroframesubsettools.readthedocs.io/>`_.
+   If you have a slope file in ``.pfb`` format, you may wish to preserve it as provenance for the slopes
+   and for use in post-processing tools. You may point ParFlow to the slope file:
 
    .. container:: list
 
       ::
 
-            pfset TopoSlopes.Elevation.FileName "elevation.pfb"
+            run.TopoSlopesX.Type = "PFBFile"
+            run.TopoSlopesX.FileName = "slopex.pfb"
 
    4. Calculate slopes in the x and y directions from the elevation
    dataset. This can be done with the built in tools as shown in
@@ -271,64 +264,9 @@ Running ParFlow
 ---------------
 
 Once the problem input is defined, you need to add a few things to the
-script to make it execute ParFlow. First you need to add the TCL or Python
-commands to load the ParFlow command package.  We will cover TCL first, then Python below.
+script to make it execute ParFlow. First you need to use Python
+commands to load the ParFlow packages.  
 
-**TCL**
-
-To set up and run ParFlow using PFTools in TCL, you need the following header lines.
-
-.. container:: list
-
-   ::
-
-      #
-      # Import the ParFlow TCL package
-      #
-      lappend auto_path $env(PARFLOW_DIR)/bin 
-      package require parflow
-      namespace import Parflow::*
-
-This loads the ``pfset`` and other ParFlow commands into the TCL shell.
-
-Since this is a script you need to actually run ParFlow. These are
-normally the last lines of the input script.
-
-.. container:: list
-
-   ::
-
-      #-----------------------------------------------------------------------------
-      # Run and Unload the ParFlow output files
-      #-----------------------------------------------------------------------------
-      pfrun default_single
-      pfundist default_single
-
-The ``pfrun`` command runs ParFlow with the database as it exists 
-at that point in the file. The argument is the name to give to the 
-output files (which will normally be the same as the name of the 
-script). Advanced users can set up multiple problems within the 
-input script by using different output names.
-
-The ``pfundist`` command takes the output files from the ParFlow 
-run and undistributes them. ParFlow uses a virtual file system 
-which allows files to be distributed across the processors. 
-The ``pfundist`` takes these files and collapses them into a 
-single file. On some machines if you don’t do the ``pfundist`` 
-you will see many files after the run. Each of these contains 
-the output from a single node; before attempting using them 
-you should undistribute them.
-
-Since the input file is a TCL script run it using the TCL shell or command interpreter:
-
-.. container:: list
-
-   ::
-
-      tclsh runname.tcl
-
-NOTE: Make sure you are using TCL 8.0 or later. The script will not work
-with earlier releases.
 
 **Python**
 
@@ -345,6 +283,7 @@ from PyPi.  This might look like:
 
 At a minimum you need to import the ParFlow Python package and name your run.  There are a lot more tools
 that bring substantial functionality that are discussed in other sections of this manual.
+Create a file such as 'default_single.py' with python code below:
 
 .. container:: list
 
@@ -353,17 +292,13 @@ that bring substantial functionality that are discussed in other sections of thi
       from parflow import Run
       from parflow.tools.fs import mkdir, get_absolute_path
 
-      dsingle = Run("dsingle", __file__)
-      #-----------------------------------------------------------------------------
-      dsingle.FileVersion = 4
+      run = Run("dsingle", __file__)
+      run.FileVersion = 4
+      # Set other keys to configure this parflow run ...
+      # Start the parflow run
+      run.run()
 
-Then to build the key database and execute ParFlow you use the run command built into the Python PFTools structure. 
 
-.. container:: list
-
-   ::
-
-      dsingle.run()
 
 From the command line you would execute your Python script using the command interpreter.
 
@@ -628,17 +563,16 @@ allowing you to use a set of commands seen later, such as ``pfset``, etc.
 
 ::
 
-   lappend auto_path $env(PARFLOW_DIR)/bin 
-   package require parflow
-   namespace import Parflow::*
+   import parflow
+   run = parflow.Run("test_run", __file__)
 
    #-----------------------------------------------------------------------------
    # File input version number
    #-----------------------------------------------------------------------------
-   pfset FileVersion 4
+   run.FileVersion = 4
 
 These next lines set the parallel process topology. The domain is
-divided in *x*, *y* and *z* by ``P``, ``Q`` and ``R``. The total number 
+divided in *x*, *y* and *z* by ``P``, ``Q`` and ``R``. The total number
 of processors is ``P*Q*R`` (see :ref:`Computing Topology`).
 
 ::
@@ -647,9 +581,9 @@ of processors is ``P*Q*R`` (see :ref:`Computing Topology`).
    # Process Topology
    #----------------------------------------------------------------------------
 
-   pfset Process.Topology.P     1
-   pfset Process.Topology.Q     1
-   pfset Process.Topology.R     1
+   run.Process.Topology.P = 1
+   run.Process.Topology.Q = 1
+   run.Process.Topology.R = 1
 
 Next we set up the computational grid (*see*
 :ref:`Defining the Problem` and :ref:`Computational Grid`).
@@ -664,26 +598,26 @@ Locate the origin in the domain.
 
 ::
 
-   pfset ComputationalGrid.Lower.X    0.0
-   pfset ComputationalGrid.Lower.Y    0.0
-   pfset ComputationalGrid.Lower.Z    0.0
+   run.ComputationalGrid.Lower.X = 0.0
+   run.ComputationalGrid.Lower.Y = 0.0
+   run.ComputationalGrid.Lower.Z = 0.0
 
 Define the size of the domain grid block. Length units, same as those on
 hydraulic conductivity.
 
 ::
 
-   pfset ComputationalGrid.DX     0.34
-   pfset ComputationalGrid.DY     0.34
-   pfset ComputationalGrid.DZ     0.038
+   run.ComputationalGrid.DX = 0.34
+   run.ComputationalGrid.DY = 0.34
+   run.ComputationalGrid.DZ = 0.038
 
 Define the number of grid blocks in the domain.
 
 ::
 
-   pfset ComputationalGrid.NX      50
-   pfset ComputationalGrid.NY      30
-   pfset ComputationalGrid.NZ      100
+   run.ComputationalGrid.NX = 50
+   run.ComputationalGrid.NY = 30
+   run.ComputationalGrid.NZ = 100
 
 This next piece is comparable to a pre-declaration of variables. These
 will be areas in our domain geometry. The regions themselves will be
@@ -697,7 +631,7 @@ these as well. For Cape Cod, we have the entire domain, and also the 2
    #----------------------------------------------------------------------------
    # The Names of the GeomInputs
    #----------------------------------------------------------------------------
-   pfset GeomInput.Names "domain_input upper_aquifer_input lower_aquifer_input"
+   run.GeomInput.Names = "domain_input upper_aquifer_input lower_aquifer_input"
 
 Now you characterize your domain that you just pre-declared to be a ``box`` 
 (see :ref:`Geometries`), and you also give it a name, ``domain``.
@@ -707,8 +641,8 @@ Now you characterize your domain that you just pre-declared to be a ``box``
    #----------------------------------------------------------------------------
    # Domain Geometry Input
    #----------------------------------------------------------------------------
-   pfset GeomInput.domain_input.InputType       Box
-   pfset GeomInput.domain_input.GeomName   domain
+   run.GeomInput.domain_input.InputType = "Box"
+   run.GeomInput.domain_input.GeomName = "domain"
 
 Here, you set the limits in space for your entire domain. The span from ``Lower.X`` 
 to ``Upper.X`` will be equal to the product of ``ComputationalGrid.DX`` 
@@ -722,15 +656,15 @@ limit of the problem in space.
    #----------------------------------------------------------------------------
    # Domain Geometry
    #----------------------------------------------------------------------------
-   pfset Geom.domain.Lower.X       0.0 
-   pfset Geom.domain.Lower.Y       0.0
-   pfset Geom.domain.Lower.Z       0.0
+   run.Geom.domain.Lower.X = 0.0
+   run.Geom.domain.Lower.Y = 0.0
+   run.Geom.domain.Lower.Z = 0.0
 
-   pfset Geom.domain.Upper.X       17.0
-   pfset Geom.domain.Upper.Y       10.2
-   pfset Geom.domain.Upper.Z       3.8
+   run.Geom.domain.Upper.X = 17.0
+   run.Geom.domain.Upper.Y = 10.2
+   run.Geom.domain.Upper.Z = 3.8
 
-   pfset Geom.domain.Patches "left right front back bottom top"
+   run.Geom.domain.Patches = "left right front back bottom top"
 
 Just like domain geometry, you also set the limits in space for the
 individual components (upper and lower, as defined in the Names of
@@ -742,36 +676,36 @@ as they are internal to the domain.
    #----------------------------------------------------------------------------
    # Upper Aquifer Geometry Input
    #----------------------------------------------------------------------------
-   pfset GeomInput.upper_aquifer_input.InputType        Box
-   pfset GeomInput.upper_aquifer_input.GeomName   upper_aquifer
+   run.GeomInput.upper_aquifer_input.InputType = "Box"
+   run.GeomInput.upper_aquifer_input.GeomName = "upper_aquifer"
 
    #----------------------------------------------------------------------------
    # Upper Aquifer Geometry
    #----------------------------------------------------------------------------
-   pfset Geom.upper_aquifer.Lower.X                        0.0 
-   pfset Geom.upper_aquifer.Lower.Y                        0.0
-   pfset Geom.upper_aquifer.Lower.Z                        1.5
+   run.Geom.upper_aquifer.Lower.X = 0.0
+   run.Geom.upper_aquifer.Lower.Y = 0.0
+   run.Geom.upper_aquifer.Lower.Z = 1.5
 
-   pfset Geom.upper_aquifer.Upper.X                        17.0
-   pfset Geom.upper_aquifer.Upper.Y                        10.2
-   pfset Geom.upper_aquifer.Upper.Z                        1.5
+   run.Geom.upper_aquifer.Upper.X = 17.0
+   run.Geom.upper_aquifer.Upper.Y = 10.2
+   run.Geom.upper_aquifer.Upper.Z = 1.5
 
    #----------------------------------------------------------------------------
    # Lower Aquifer Geometry Input
    #----------------------------------------------------------------------------
-   pfset GeomInput.lower_aquifer_input.InputType       Box
-   pfset GeomInput.lower_aquifer_input.GeomName   lower_aquifer
+   run.GeomInput.lower_aquifer_input.InputType = "Box"
+   run.GeomInput.lower_aquifer_input.GeomName = "lower_aquifer"
 
    #----------------------------------------------------------------------------
    # Lower Aquifer Geometry
    #----------------------------------------------------------------------------
-   pfset Geom.lower_aquifer.Lower.X      0.0 
-   pfset Geom.lower_aquifer.Lower.Y      0.0
-   pfset Geom.lower_aquifer.Lower.Z      0.0
+   run.Geom.lower_aquifer.Lower.X = 0.0
+   run.Geom.lower_aquifer.Lower.Y = 0.0
+   run.Geom.lower_aquifer.Lower.Z = 0.0
 
-   pfset Geom.lower_aquifer.Upper.X     17.0
-   pfset Geom.lower_aquifer.Upper.Y     10.2
-   pfset Geom.lower_aquifer.Upper.Z      1.5
+   run.Geom.lower_aquifer.Upper.X = 17.0
+   run.Geom.lower_aquifer.Upper.Y = 10.2
+   run.Geom.lower_aquifer.Upper.Z = 1.5
 
 Now you add permeability data to the domain sections defined above
 (:ref:`Permeability`). You can reassign values simply by
@@ -788,7 +722,7 @@ Name the permeability regions you will describe.
 
 ::
 
-   pfset Geom.Perm.Names "upper_aquifer lower_aquifer"
+   run.Geom.Perm.Names = "upper_aquifer lower_aquifer"
 
 You can set, for example homogeneous, constant permeability, or you can
 generate a random field that meets your statistical requirements. To
@@ -876,13 +810,13 @@ z) and therefore each is set to 1.0.
 
 ::
 
-   pfset Perm.TensorType               TensorByGeom
+   run.Perm.TensorType = "TensorByGeom"
 
-   pfset Geom.Perm.TensorByGeom.Names  "domain"
+   run.Geom.Perm.TensorByGeom.Names = "domain"
 
-   pfset Geom.domain.Perm.TensorValX  1.0
-   pfset Geom.domain.Perm.TensorValY  1.0
-   pfset Geom.domain.Perm.TensorValZ  1.0
+   run.Geom.domain.Perm.TensorValX = 1.0
+   run.Geom.domain.Perm.TensorValY = 1.0
+   run.Geom.domain.Perm.TensorValZ = 1.0
 
 Next we set the specific storage, though this is not used in the
 IMPES/steady-state calculation.
@@ -895,9 +829,9 @@ IMPES/steady-state calculation.
    # specific storage does not figure into the impes (fully sat) 
    # case but we still need a key for it
 
-   pfset SpecificStorage.Type            Constant
-   pfset SpecificStorage.GeomNames       ""
-   pfset Geom.domain.SpecificStorage.Value 1.0e-4
+   run.SpecificStorage.Type = "Constant"
+   run.SpecificStorage.GeomNames = ""
+   run.Geom.domain.SpecificStorage.Value = 1.0e-4
 
 ParFlow has the capability to deal with a multiphase system, but we only
 have one (water) at Cape Cod. As we stated earlier, we set density and
@@ -915,13 +849,13 @@ which is what we want for this problem.
    # Phases
    #----------------------------------------------------------------------------
 
-   pfset Phase.Names "water"
+   run.Phase.Names = "water"
 
-   pfset Phase.water.Density.Type	Constant
-   pfset Phase.water.Density.Value	1.0
+   run.Phase.water.Density.Type = "Constant"
+   run.Phase.water.Density.Value = 1.0
 
-   pfset Phase.water.Viscosity.Type	Constant
-   pfset Phase.water.Viscosity.Value	1.0
+   run.Phase.water.Viscosity.Type = "Constant"
+   run.Phase.water.Viscosity.Value = 1.0
 
 We will not use the ParFlow grid based transport scheme. We will then
 leave contaminants blank because we will use a different code to model
@@ -932,7 +866,7 @@ leave contaminants blank because we will use a different code to model
    #----------------------------------------------------------------------------
    # Contaminants
    #----------------------------------------------------------------------------
-   pfset Contaminants.Names			""
+   run.Contaminants.Names = ""
 
 As with density and viscosity, gravity is normalized here. If we used
 the true value (in the *[L]* and *[T]* units of hydraulic conductivity)
@@ -945,7 +879,7 @@ that the code calculates hydraulic conductivity.
    # Gravity
    #----------------------------------------------------------------------------
 
-   pfset Gravity				1.0
+   run.Gravity = 1.0
 
    #----------------------------------------------------------------------------
    # Setup timing info
@@ -956,16 +890,16 @@ conditions. We are not using those features in this example.
 
 ::
 
-   pfset TimingInfo.BaseUnit		1.0
+   run.TimingInfo.BaseUnit = 1.0
 
 Cape Cod is a steady state problem, so these timing features are again
 unused, but need to be included.
 
 ::
 
-   pfset TimingInfo.StartCount   -1
-   pfset TimingInfo.StartTime     0.0
-   pfset TimingInfo.StopTime     0.0
+   run.TimingInfo.StartCount = -1
+   run.TimingInfo.StartTime = 0.0
+   run.TimingInfo.StopTime = 0.0
 
 Set the ``dump interval`` to -1 to report info at the end of every 
 calculation, which in this case is only when steady state has been 
@@ -973,7 +907,7 @@ reached.
 
 ::
 
-   pfset TimingInfo.DumpInterval	       -1
+   run.TimingInfo.DumpInterval = -1
 
 Next, we assign the porosity (*see* §6.1.12 :ref:`Porosity`). For the
 Cape Cod, the porosity is 0.39.
@@ -984,12 +918,12 @@ Cape Cod, the porosity is 0.39.
    # Porosity
    #----------------------------------------------------------------------------
 
-   pfset Geom.Porosity.GeomNames          domain
+   run.Geom.Porosity.GeomNames = "domain"
 
-   pfset Geom.domain.Porosity.Type    Constant
-   pfset Geom.domain.Porosity.Value   0.390
+   run.Geom.domain.Porosity.Type = "Constant"
+   run.Geom.domain.Porosity.Value = 0.390
 
-Having defined the geometry of our problem before and named it ``domain``, we 
+Having defined the geometry of our problem before and named it ``domain``, we
 are now ready to report/upload that problem, which we do here.
 
 ::
@@ -997,7 +931,7 @@ are now ready to report/upload that problem, which we do here.
    #----------------------------------------------------------------------------
    # Domain
    #----------------------------------------------------------------------------
-   pfset Domain.GeomName domain
+   run.Domain.GeomName = "domain"
 
 Mobility between phases is set to 1.0 because we only have one phase
 (water).
@@ -1007,8 +941,8 @@ Mobility between phases is set to 1.0 because we only have one phase
    #----------------------------------------------------------------------------
    # Mobility
    #----------------------------------------------------------------------------
-   pfset Phase.water.Mobility.Type        Constant
-   pfset Phase.water.Mobility.Value       1.0
+   run.Phase.water.Mobility.Type = "Constant"
+   run.Phase.water.Mobility.Value = 1.0
 
 Again, ParFlow has more capabilities than we are using here in the Cape
 Cod example. For this example, we handle monitoring wells in a separate
@@ -1024,7 +958,7 @@ pumping wells in this script.
    #----------------------------------------------------------------------------
    # Wells
    #----------------------------------------------------------------------------
-   pfset Wells.Names ""
+   run.Wells.Names = ""
 
 You can give certain periods of time names if you want to (ie.
 Pre-injection, post-injection, etc). Here, however we do not have
@@ -1040,10 +974,10 @@ specified earlier.
    #----------------------------------------------------------------------------
    # Time Cycles
    #----------------------------------------------------------------------------
-   pfset Cycle.Names constant
-   pfset Cycle.constant.Names		"alltime"
-   pfset Cycle.constant.alltime.Length	 1
-   pfset Cycle.constant.Repeat		-1
+   run.Cycle.Names = "constant"
+   run.Cycle.constant.Names = "alltime"
+   run.Cycle.constant.alltime.Length = 1
+   run.Cycle.constant.Repeat = -1
 
 Now, we assign Boundary Conditions for each face (each of the Patches in
 the domain defined before). Recall the previously stated Patches and
@@ -1051,7 +985,7 @@ associate them with the boundary conditions that follow.
 
 ::
 
-   pfset BCPressure.PatchNames "left right front back bottom top"
+   run.BCPressure.PatchNames = "left right front back bottom top"
 
 These are Dirichlet BCs (i.e. constant head over cell so the pressure
 head is set to hydrostatic– *see* :ref:`Boundary Conditions: Pressure`). There is no time
@@ -1062,23 +996,23 @@ head conditions.
 
 ::
 
-   pfset Patch.left.BCPressure.Type          DirEquilRefPatch
-   pfset Patch.left.BCPressure.Cycle        "constant"
-   pfset Patch.left.BCPressure.RefGeom domain
+   run.Patch.left.BCPressure.Type = "DirEquilRefPatch"
+   run.Patch.left.BCPressure.Cycle = "constant"
+   run.Patch.left.BCPressure.RefGeom = "domain"
 
 Reference the current (left) patch to the bottom to define the line of
 intersection between the two.
 
 ::
 
-   pfset Patch.left.BCPressure.RefPatch  bottom
+   run.Patch.left.BCPressure.RefPatch = "bottom"
 
 Set the head permanently to 10.0m. Pressure-head will of course vary top
 to bottom because of hydrostatics, but head potential will be constant.
 
 ::
 
-   pfset Patch.left.BCPressure.alltime.Value  10.0
+   run.Patch.left.BCPressure.alltime.Value = 10.0
 
 Repeat the declarations for the rest of the faces of the domain. The
 left to right (*X*) dimension is aligned with the hydraulic gradient.
@@ -1087,27 +1021,27 @@ the length of the domain corresponds to the correct hydraulic gradient.
 
 ::
 
-   pfset Patch.right.BCPressure.Type               DirEquilRefPatch
-   pfset Patch.right.BCPressure.Cycle              "constant"
-   pfset Patch.right.BCPressure.RefGeom       domain
-   pfset Patch.right.BCPressure.RefPatch       bottom
-   pfset Patch.right.BCPressure.alltime.Value 9.97501
+   run.Patch.right.BCPressure.Type = "DirEquilRefPatch"
+   run.Patch.right.BCPressure.Cycle = "constant"
+   run.Patch.right.BCPressure.RefGeom = "domain"
+   run.Patch.right.BCPressure.RefPatch = "bottom"
+   run.Patch.right.BCPressure.alltime.Value = 9.97501
 
-   pfset Patch.front.BCPressure.Type                FluxConst
-   pfset Patch.front.BCPressure.Cycle              "constant"
-   pfset Patch.front.BCPressure.alltime.Value 0.0
+   run.Patch.front.BCPressure.Type = "FluxConst"
+   run.Patch.front.BCPressure.Cycle = "constant"
+   run.Patch.front.BCPressure.alltime.Value = 0.0
 
-   pfset Patch.back.BCPressure.Type               FluxConst
-   pfset Patch.back.BCPressure.Cycle              "constant"
-   pfset Patch.back.BCPressure.alltime.Value 0.0
+   run.Patch.back.BCPressure.Type = "FluxConst"
+   run.Patch.back.BCPressure.Cycle = "constant"
+   run.Patch.back.BCPressure.alltime.Value = 0.0
 
-   pfset Patch.bottom.BCPressure.Type               FluxConst
-   pfset Patch.bottom.BCPressure.Cycle              "constant"
-   pfset Patch.bottom.BCPressure.alltime.Value 0.0
+   run.Patch.bottom.BCPressure.Type = "FluxConst"
+   run.Patch.bottom.BCPressure.Cycle = "constant"
+   run.Patch.bottom.BCPressure.alltime.Value = 0.0
 
-   pfset Patch.top.BCPressure.Type			FluxConst
-   pfset Patch.top.BCPressure.Cycle			"constant"
-   pfset Patch.top.BCPressure.alltime.Value		0.0
+   run.Patch.top.BCPressure.Type = "FluxConst"
+   run.Patch.top.BCPressure.Cycle = "constant"
+   run.Patch.top.BCPressure.alltime.Value = 0.0
 
 Next we define topographic slopes and Mannings *n* values. These are not
 used, since we do not solve for overland flow. However, the keys still
@@ -1121,34 +1055,34 @@ need to appear in the input script.
    # topo slopes do not figure into the impes (fully sat) case but we still
    # need keys for them
 
-   pfset TopoSlopesX.Type "Constant"
-   pfset TopoSlopesX.GeomNames ""
+   run.TopoSlopesX.Type = "Constant"
+   run.TopoSlopesX.GeomNames = ""
 
-   pfset TopoSlopesX.Geom.domain.Value 0.0
+   run.TopoSlopesX.Geom.domain.Value = 0.0
 
    #---------------------------------------------------------
    # Topo slopes in y-direction
    #---------------------------------------------------------
 
-   pfset TopoSlopesY.Type "Constant"
-   pfset TopoSlopesY.GeomNames ""
+   run.TopoSlopesY.Type = "Constant"
+   run.TopoSlopesY.GeomNames = ""
 
-   pfset TopoSlopesY.Geom.domain.Value 0.0
+   run.TopoSlopesY.Geom.domain.Value = 0.0
 
    # You may also indicate an elevation file used to derive the slopes.
    # This is optional but can be useful when post-processing terrain-
    # following grids:
-   pfset TopoSlopes.Elevation.FileName "elevation.pfb"
+   run.TopoSlopes.Elevation.FileName = "elevation.pfb"
 
    #---------------------------------------------------------
-   # Mannings coefficient 
+   # Mannings coefficient
    #---------------------------------------------------------
    # mannings roughnesses do not figure into the impes (fully sat) case but we still
    # need a key for them
 
-   pfset Mannings.Type "Constant"
-   pfset Mannings.GeomNames ""
-   pfset Mannings.Geom.domain.Value 0.
+   run.Mannings.Type = "Constant"
+   run.Mannings.GeomNames = ""
+   run.Mannings.Geom.domain.Value = 0.0
 
 Phase sources allows you to add sources other than wells and boundaries,
 but we do not have any so this key is constant, 0.0 over entire domain.
@@ -1159,9 +1093,9 @@ but we do not have any so this key is constant, 0.0 over entire domain.
    # Phase sources:
    #----------------------------------------------------------------------------
 
-   pfset PhaseSources.water.Type                         Constant
-   pfset PhaseSources.water.GeomNames                    domain
-   pfset PhaseSources.water.Geom.domain.Value        0.0
+   run.PhaseSources.water.Type = "Constant"
+   run.PhaseSources.water.GeomNames = "domain"
+   run.PhaseSources.water.Geom.domain.Value = 0.0
 
 Next we define solver parameters for **IMPES**. Since this is the
 default solver, we do not need a solver key.
@@ -1177,19 +1111,19 @@ converges.
 
 ::
 
-   pfset Solver.MaxIter 50
+   run.Solver.MaxIter = 50
 
 The solution must be accurate to this level
 
 ::
 
-   pfset Solver.AbsTol  1E-10
+   run.Solver.AbsTol = 1E-10
 
 We drop significant digits beyond E-15
 
 ::
 
-   pfset Solver.Drop   1E-15
+   run.Solver.Drop = 1E-15
 
    #--------------------------------------------------------
    # Run and Unload the ParFlow output files
@@ -1331,27 +1265,27 @@ Let us change the input problem by adding a pumping well:
 
       ::
 
-         pfset Wells.Names {new_well}
+         run.Wells.Names = "new_well"
 
-         pfset Wells.new_well.InputType                Recirc
+         run.Wells.new_well.InputType = "Recirc"
 
-         pfset Wells.new_well.Cycle		    constant
+         run.Wells.new_well.Cycle = "constant"
 
-         pfset Wells.new_well.ExtractionType	    Flux
-         pfset Wells.new_well.InjectionType            Flux
+         run.Wells.new_well.ExtractionType = "Flux"
+         run.Wells.new_well.InjectionType = "Flux"
 
-         pfset Wells.new_well.X			    10.0 
-         pfset Wells.new_well.Y			    10.0
-         pfset Wells.new_well.ExtractionZLower	     0.5
-         pfset Wells.new_well.ExtractionZUpper	     0.5
-         pfset Wells.new_well.InjectionZLower	     0.2
-         pfset Wells.new_well.InjectionZUpper	     0.2
+         run.Wells.new_well.X = 10.0
+         run.Wells.new_well.Y = 10.0
+         run.Wells.new_well.ExtractionZLower = 0.5
+         run.Wells.new_well.ExtractionZUpper = 0.5
+         run.Wells.new_well.InjectionZLower = 0.2
+         run.Wells.new_well.InjectionZUpper = 0.2
 
-         pfset Wells.new_well.ExtractionMethod	    Standard
-         pfset Wells.new_well.InjectionMethod          Standard
+         run.Wells.new_well.ExtractionMethod = "Standard"
+         run.Wells.new_well.InjectionMethod = "Standard"
 
-         pfset Wells.new_well.alltime.Extraction.Flux.water.Value        	     0.50
-         pfset Wells.new_well.alltime.Injection.Flux.water.Value		     0.75
+         run.Wells.new_well.alltime.Extraction.Flux.water.Value = 0.50
+         run.Wells.new_well.alltime.Injection.Flux.water.Value = 0.75
 
 For more information on defining the problem, see
 :ref:`Defining the Problem`.
@@ -1366,9 +1300,9 @@ he solver section:
 
    ::
 
-      pfset Solver.WriteSiloSubsurfData True
-      pfset Solver.WriteSiloPressure True
-      pfset Solver.WriteSiloSaturation True
+      run.Solver.WriteSiloSubsurfData = True
+      run.Solver.WriteSiloPressure = True
+      run.Solver.WriteSiloSaturation = True
 
 You can then directly open the file ``harvey_flow.#.out.perm_x.silo`` 
 (where ``#`` is the realization number). The resulting image will 
@@ -1404,17 +1338,16 @@ allowing you to use a set of commands seen later, such as ``pfset``, etc.
 
 ::
 
-   lappend auto_path $env(PARFLOW_DIR)/bin 
-   package require parflow
-   namespace import Parflow::*
+   import parflow
+   run = parflow.Run("test_run", __file__)
 
    #-----------------------------------------------------------------------------
    # File input version number
    #-----------------------------------------------------------------------------
-   pfset FileVersion 4
+   run.FileVersion = 4
 
 These next lines set the parallel process topology. The domain is
-divided in *x*, *y* and *z* by ``P``, ``Q`` and ``R``. The total 
+divided in *x*, *y* and *z* by ``P``, ``Q`` and ``R``. The total
 number of processors is ``P*Q*R`` (see :ref:`Computing Topology`).
 
 ::
@@ -1423,9 +1356,9 @@ number of processors is ``P*Q*R`` (see :ref:`Computing Topology`).
    # Process Topology
    #----------------------------------------------------------------------------
 
-   pfset Process.Topology.P     1
-   pfset Process.Topology.Q     1
-   pfset Process.Topology.R     1
+   run.Process.Topology.P = 1
+   run.Process.Topology.Q = 1
+   run.Process.Topology.R = 1
 
 Before we really get started make a directory for our outputs and copy
 all of the required input files into the run directory. These files will
@@ -1466,26 +1399,26 @@ Locate the origin in the domain.
 
 ::
 
-   pfset ComputationalGrid.Lower.X    0.0
-   pfset ComputationalGrid.Lower.Y    0.0
-   pfset ComputationalGrid.Lower.Z    0.0
+   run.ComputationalGrid.Lower.X = 0.0
+   run.ComputationalGrid.Lower.Y = 0.0
+   run.ComputationalGrid.Lower.Z = 0.0
 
 Define the size of the domain grid block. Length units, same as those on
 hydraulic conductivity.
 
 ::
 
-   pfset ComputationalGrid.DX     1000.0
-   pfset ComputationalGrid.DY     1000.0
-   pfset ComputationalGrid.DZ     2.0
+   run.ComputationalGrid.DX = 1000.0
+   run.ComputationalGrid.DY = 1000.0
+   run.ComputationalGrid.DZ = 2.0
 
 Define the number of grid blocks in the domain.
 
 ::
 
-   pfset ComputationalGrid.NX      41
-   pfset ComputationalGrid.NY      41
-   pfset ComputationalGrid.NZ      50
+   run.ComputationalGrid.NX = 41
+   run.ComputationalGrid.NY = 41
+   run.ComputationalGrid.NZ = 50
 
 This next piece is comparable to a pre-declaration of variables. These
 will be areas in our domain geometry. The regions themselves will be
@@ -1499,7 +1432,7 @@ is for the indicator file (which will also span the entire domain).
    #-----------------------------------------------------------------------------
    # The Names of the GeomInputs
    #-----------------------------------------------------------------------------
-   pfset GeomInput.Names                     "box_input indi_input"
+   run.GeomInput.Names = "box_input indi_input"
 
 Now you characterize the domain that you just pre-declared 
 to be a ``box`` (see :ref:`Geometries`), and you also 
@@ -1510,8 +1443,8 @@ give it a name, ``domain``.
    #-----------------------------------------------------------------------------
    # Domain Geometry Input
    #-----------------------------------------------------------------------------
-   pfset GeomInput.box_input.InputType      Box
-   pfset GeomInput.box_input.GeomName      domain
+   run.GeomInput.box_input.InputType = "Box"
+   run.GeomInput.box_input.GeomName = "domain"
 
 Here, you set the limits in space for your entire domain. The span 
 from ``Lower.X`` to ``Upper.X`` will be equal to the product 
@@ -1526,15 +1459,15 @@ edges, because the domain is the limit of the problem in space.
    #-----------------------------------------------------------------------------
    # Domain Geometry 
    #-----------------------------------------------------------------------------
-   pfset Geom.domain.Lower.X                        0.0
-   pfset Geom.domain.Lower.Y                        0.0
-   pfset Geom.domain.Lower.Z                        0.0
-    
-   pfset Geom.domain.Upper.X                        41000.0
-   pfset Geom.domain.Upper.Y                        41000.0
-   pfset Geom.domain.Upper.Z                          100.0
+   run.Geom.domain.Lower.X = 0.0
+   run.Geom.domain.Lower.Y = 0.0
+   run.Geom.domain.Lower.Z = 0.0
 
-   pfset Geom.domain.Patches             "x-lower x-upper y-lower y-upper z-lower z-upper"
+   run.Geom.domain.Upper.X = 41000.0
+   run.Geom.domain.Upper.Y = 41000.0
+   run.Geom.domain.Upper.Z = 100.0
+
+   run.Geom.domain.Patches = "x-lower x-upper y-lower y-upper z-lower z-upper"
 
 Now we setup the indicator file. As noted above, the indicator file has
 integer values for every grid cell in the domain designating what
@@ -1549,9 +1482,9 @@ into the run directory at the start of the script.
    #-----------------------------------------------------------------------------
    # Indicator Geometry Input
    #-----------------------------------------------------------------------------
-   pfset GeomInput.indi_input.InputType      IndicatorField
-   pfset GeomInput.indi_input.GeomNames      "s1 s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 s12 s13 g1 g2 g3 g4 g5 g6 g7 g8"
-   pfset Geom.indi_input.FileName            "IndicatorFile_Gleeson.50z.pfb"
+   run.GeomInput.indi_input.InputType = "IndicatorField"
+   run.GeomInput.indi_input.GeomNames = "s1 s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 s12 s13 g1 g2 g3 g4 g5 g6 g7 g8"
+   run.Geom.indi_input.FileName = "IndicatorFile_Gleeson.50z.pfb"
 
 For every name in the ``GeomNames`` list we define the corresponding 
 value in the indicator file. For example, here we are saying that 
@@ -1562,27 +1495,27 @@ indicator file do not need to be consecutive.
 
 ::
 
-   pfset GeomInput.s1.Value                1
-   pfset GeomInput.s2.Value                2
-   pfset GeomInput.s3.Value                3
-   pfset GeomInput.s4.Value                4
-   pfset GeomInput.s5.Value                5
-   pfset GeomInput.s6.Value                6
-   pfset GeomInput.s7.Value                7
-   pfset GeomInput.s8.Value                8
-   pfset GeomInput.s9.Value                9
-   pfset GeomInput.s10.Value               10
-   pfset GeomInput.s11.Value               11
-   pfset GeomInput.s12.Value               12
-   pfset GeomInput.s13.Value               13
-   pfset GeomInput.g1.Value                21
-   pfset GeomInput.g2.Value                22
-   pfset GeomInput.g3.Value                23
-   pfset GeomInput.g4.Value                24
-   pfset GeomInput.g5.Value                25
-   pfset GeomInput.g6.Value                26
-   pfset GeomInput.g7.Value                27
-   pfset GeomInput.g8.Value                28
+   run.GeomInput.s1.Value = 1
+   run.GeomInput.s2.Value = 2
+   run.GeomInput.s3.Value = 3
+   run.GeomInput.s4.Value = 4
+   run.GeomInput.s5.Value = 5
+   run.GeomInput.s6.Value = 6
+   run.GeomInput.s7.Value = 7
+   run.GeomInput.s8.Value = 8
+   run.GeomInput.s9.Value = 9
+   run.GeomInput.s10.Value = 10
+   run.GeomInput.s11.Value = 11
+   run.GeomInput.s12.Value = 12
+   run.GeomInput.s13.Value = 13
+   run.GeomInput.g1.Value = 21
+   run.GeomInput.g2.Value = 22
+   run.GeomInput.g3.Value = 23
+   run.GeomInput.g4.Value = 24
+   run.GeomInput.g5.Value = 25
+   run.GeomInput.g6.Value = 26
+   run.GeomInput.g7.Value = 27
+   run.GeomInput.g8.Value = 28
 
 Now you add permeability data to the domain sections defined above
 (:ref:`Permeability`). You can reassign values simply by
@@ -1598,49 +1531,49 @@ in ``Porosity.GeomNames`` must have values assigned.
    #-----------------------------------------------------------------------------
    # Permeability (values in m/hr)
    #-----------------------------------------------------------------------------
-   pfset Geom.Perm.Names                     "domain s1 s2 s3 s4 s5 s6 s7 s8 s9 g2 g3 g6 g8"
+   run.Geom.Perm.Names = "domain s1 s2 s3 s4 s5 s6 s7 s8 s9 g2 g3 g6 g8"
 
-   pfset Geom.domain.Perm.Type           Constant
-   pfset Geom.domain.Perm.Value          0.2
+   run.Geom.domain.Perm.Type = "Constant"
+   run.Geom.domain.Perm.Value = 0.2
 
-   pfset Geom.s1.Perm.Type               Constant
-   pfset Geom.s1.Perm.Value              0.269022595
+   run.Geom.s1.Perm.Type = "Constant"
+   run.Geom.s1.Perm.Value = 0.269022595
 
-   pfset Geom.s2.Perm.Type               Constant
-   pfset Geom.s2.Perm.Value              0.043630356
+   run.Geom.s2.Perm.Type = "Constant"
+   run.Geom.s2.Perm.Value = 0.043630356
 
-   pfset Geom.s3.Perm.Type               Constant
-   pfset Geom.s3.Perm.Value              0.015841225
+   run.Geom.s3.Perm.Type = "Constant"
+   run.Geom.s3.Perm.Value = 0.015841225
 
-   pfset Geom.s4.Perm.Type               Constant
-   pfset Geom.s4.Perm.Value              0.007582087
+   run.Geom.s4.Perm.Type = "Constant"
+   run.Geom.s4.Perm.Value = 0.007582087
 
-   pfset Geom.s5.Perm.Type               Constant
-   pfset Geom.s5.Perm.Value              0.01818816
+   run.Geom.s5.Perm.Type = "Constant"
+   run.Geom.s5.Perm.Value = 0.01818816
 
-   pfset Geom.s6.Perm.Type               Constant
-   pfset Geom.s6.Perm.Value              0.005009435
+   run.Geom.s6.Perm.Type = "Constant"
+   run.Geom.s6.Perm.Value = 0.005009435
 
-   pfset Geom.s7.Perm.Type               Constant
-   pfset Geom.s7.Perm.Value              0.005492736
+   run.Geom.s7.Perm.Type = "Constant"
+   run.Geom.s7.Perm.Value = 0.005492736
 
-   pfset Geom.s8.Perm.Type               Constant
-   pfset Geom.s8.Perm.Value              0.004675077
+   run.Geom.s8.Perm.Type = "Constant"
+   run.Geom.s8.Perm.Value = 0.004675077
 
-   pfset Geom.s9.Perm.Type               Constant
-   pfset Geom.s9.Perm.Value              0.003386794
+   run.Geom.s9.Perm.Type = "Constant"
+   run.Geom.s9.Perm.Value = 0.003386794
 
-   pfset Geom.g2.Perm.Type               Constant
-   pfset Geom.g2.Perm.Value              0.025
+   run.Geom.g2.Perm.Type = "Constant"
+   run.Geom.g2.Perm.Value = 0.025
 
-   pfset Geom.g3.Perm.Type               Constant
-   pfset Geom.g3.Perm.Value              0.059
+   run.Geom.g3.Perm.Type = "Constant"
+   run.Geom.g3.Perm.Value = 0.059
 
-   pfset Geom.g6.Perm.Type               Constant
-   pfset Geom.g6.Perm.Value              0.2
+   run.Geom.g6.Perm.Type = "Constant"
+   run.Geom.g6.Perm.Value = 0.2
 
-   pfset Geom.g8.Perm.Type              Constant
-   pfset Geom.g8.Perm.Value             0.68
+   run.Geom.g8.Perm.Type = "Constant"
+   run.Geom.g8.Perm.Value = 0.68
 
 The following section allows you to specify the permeability tensor. In
 the case below, permeability is symmetric in all directions (x, y, and
@@ -1651,11 +1584,11 @@ repeating these lines with different ``Geom.Names``.
 
 ::
 
-   pfset Perm.TensorType                     TensorByGeom
-   pfset Geom.Perm.TensorByGeom.Names        "domain"
-   pfset Geom.domain.Perm.TensorValX         1.0d0
-   pfset Geom.domain.Perm.TensorValY         1.0d0
-   pfset Geom.domain.Perm.TensorValZ         1.0d0
+   run.Perm.TensorType = "TensorByGeom"
+   run.Geom.Perm.TensorByGeom.Names = "domain"
+   run.Geom.domain.Perm.TensorValX = 1.0
+   run.Geom.domain.Perm.TensorValY = 1.0
+   run.Geom.domain.Perm.TensorValZ = 1.0
 
 Next we set the specific storage. Here again we specify one value for
 the whole domain but these lines can be easily repeated to set different
@@ -1666,9 +1599,9 @@ values for different units.
    #-----------------------------------------------------------------------------
    # Specific Storage
    #-----------------------------------------------------------------------------
-   pfset SpecificStorage.Type                Constant
-   pfset SpecificStorage.GeomNames           "domain"
-   pfset Geom.domain.SpecificStorage.Value   1.0e-5
+   run.SpecificStorage.Type = "Constant"
+   run.SpecificStorage.GeomNames = "domain"
+   run.Geom.domain.SpecificStorage.Value = 1.0e-5
 
 ParFlow has the capability to deal with a multiphase system, but we only
 have one (water) in this example. As we stated earlier, we set density
@@ -1685,13 +1618,13 @@ which is what we want for this problem.
    #-----------------------------------------------------------------------------
    # Phases
    #-----------------------------------------------------------------------------
-   pfset Phase.Names                         "water"
+   run.Phase.Names = "water"
 
-   pfset Phase.water.Density.Type            Constant
-   pfset Phase.water.Density.Value           1.0
+   run.Phase.water.Density.Type = "Constant"
+   run.Phase.water.Density.Value = 1.0
 
-   pfset Phase.water.Viscosity.Type          Constant
-   pfset Phase.water.Viscosity.Value         1.0
+   run.Phase.water.Viscosity.Type = "Constant"
+   run.Phase.water.Viscosity.Value = 1.0
 
 This example does not include the ParFlow grid based transport scheme.
 Therefore we leave contaminants blank.
@@ -1701,7 +1634,7 @@ Therefore we leave contaminants blank.
    #-----------------------------------------------------------------------------
    # Contaminants
    #-----------------------------------------------------------------------------
-   pfset Contaminants.Names                  ""
+   run.Contaminants.Names = ""
 
 As with density and viscosity, gravity is normalized here. If we used
 the true value (in the *[L]* and *[T]* units of hydraulic conductivity)
@@ -1713,7 +1646,7 @@ that the code calculates hydraulic conductivity.
    #-----------------------------------------------------------------------------
    # Gravity
    #-----------------------------------------------------------------------------
-   pfset Gravity                             1.0
+   run.Gravity = 1.0
 
 Next we set up the timing for our simulation.
 
@@ -1731,7 +1664,7 @@ units of m/hr in this example this means that our basin unit of time is
 
 ::
 
-   pfset TimingInfo.BaseUnit                 1.0
+   run.TimingInfo.BaseUnit = 1.0
 
 This key specifies the time step number that will be associated with the
 first advection cycle of the transient problem. Because we are starting
@@ -1742,7 +1675,7 @@ a run.
 
 ::
 
-   pfset TimingInfo.StartCount               0.0
+   run.TimingInfo.StartCount = 0.0
 
 ``StartTime`` and ``StopTime`` specify the start and stop times 
 for the simulation. These values should correspond with the 
@@ -1750,8 +1683,8 @@ forcing files you are using.
 
 ::
 
-   pfset TimingInfo.StartTime                0.0
-   pfset TimingInfo.StopTime                 72.0
+   run.TimingInfo.StartTime = 0.0
+   run.TimingInfo.StopTime = 72.0
 
 This key specifies the timing interval at which ParFlow time dependent
 outputs will be written. Here we have a base unit of 1hr so a dump
@@ -1761,15 +1694,15 @@ key only controls the ParFlow output interval and not the interval that
 
 ::
 
-   pfset TimingInfo.DumpInterval             24.0
+   run.TimingInfo.DumpInterval = 24.0
 
 Here we set the time step value. For this example we use a constant time
 step of 1hr.
 
 ::
 
-   pfset TimeStep.Type                       Constant
-   pfset TimeStep.Value                      1.0
+   run.TimeStep.Type = "Constant"
+   run.TimeStep.Value = 1.0
 
 Next, we assign the porosity (*see* §6.1.12 :ref:`Porosity`). As with
 the permeability we assign different values for different indicator
@@ -1782,37 +1715,37 @@ that every geometry listed in ``Porosity.GeomNames`` must have values assigned.
    #-----------------------------------------------------------------------------
    # Porosity
    #-----------------------------------------------------------------------------
-   pfset Geom.Porosity.GeomNames             "domain s1 s2 s3 s4 s5 s6 s7 s8 s9"
+   run.Geom.Porosity.GeomNames = "domain s1 s2 s3 s4 s5 s6 s7 s8 s9"
 
-   pfset Geom.domain.Porosity.Type          Constant
-   pfset Geom.domain.Porosity.Value         0.4
+   run.Geom.domain.Porosity.Type = "Constant"
+   run.Geom.domain.Porosity.Value = 0.4
 
-   pfset Geom.s1.Porosity.Type    Constant
-   pfset Geom.s1.Porosity.Value   0.375
+   run.Geom.s1.Porosity.Type = "Constant"
+   run.Geom.s1.Porosity.Value = 0.375
 
-   pfset Geom.s2.Porosity.Type    Constant
-   pfset Geom.s2.Porosity.Value   0.39
+   run.Geom.s2.Porosity.Type = "Constant"
+   run.Geom.s2.Porosity.Value = 0.39
 
-   pfset Geom.s3.Porosity.Type    Constant
-   pfset Geom.s3.Porosity.Value   0.387
+   run.Geom.s3.Porosity.Type = "Constant"
+   run.Geom.s3.Porosity.Value = 0.387
 
-   pfset Geom.s4.Porosity.Type    Constant
-   pfset Geom.s4.Porosity.Value   0.439
+   run.Geom.s4.Porosity.Type = "Constant"
+   run.Geom.s4.Porosity.Value = 0.439
 
-   pfset Geom.s5.Porosity.Type    Constant
-   pfset Geom.s5.Porosity.Value   0.489
+   run.Geom.s5.Porosity.Type = "Constant"
+   run.Geom.s5.Porosity.Value = 0.489
 
-   pfset Geom.s6.Porosity.Type    Constant
-   pfset Geom.s6.Porosity.Value   0.399
+   run.Geom.s6.Porosity.Type = "Constant"
+   run.Geom.s6.Porosity.Value = 0.399
 
-   pfset Geom.s7.Porosity.Type    Constant
-   pfset Geom.s7.Porosity.Value   0.384
+   run.Geom.s7.Porosity.Type = "Constant"
+   run.Geom.s7.Porosity.Value = 0.384
 
-   pfset Geom.s8.Porosity.Type            Constant
-   pfset Geom.s8.Porosity.Value           0.482
+   run.Geom.s8.Porosity.Type = "Constant"
+   run.Geom.s8.Porosity.Value = 0.482
 
-   pfset Geom.s9.Porosity.Type            Constant
-   pfset Geom.s9.Porosity.Value           0.442
+   run.Geom.s9.Porosity.Type = "Constant"
+   run.Geom.s9.Porosity.Value = 0.442
 
 Having defined the geometry of our problem before and named it ``domain``, 
 we are now ready to report/upload that problem, which we do here.
@@ -1822,7 +1755,7 @@ we are now ready to report/upload that problem, which we do here.
    #-----------------------------------------------------------------------------
    # Domain
    #-----------------------------------------------------------------------------
-   pfset Domain.GeomName                     "domain"
+   run.Domain.GeomName = "domain"
 
 Mobility between phases is set to 1.0 because we only have one phase
 (water).
@@ -1832,8 +1765,8 @@ Mobility between phases is set to 1.0 because we only have one phase
    #----------------------------------------------------------------------------
    # Mobility
    #----------------------------------------------------------------------------
-   pfset Phase.water.Mobility.Type        Constant
-   pfset Phase.water.Mobility.Value       1.0
+   run.Phase.water.Mobility.Type = "Constant"
+   run.Phase.water.Mobility.Value = 1.0
 
 Again, ParFlow has more capabilities than we are using here in this
 example. Note that since there are no well names listed here, ParFlow
@@ -1847,7 +1780,7 @@ example of how to include pumping wells in this script.
    #-----------------------------------------------------------------------------
    # Wells
    #-----------------------------------------------------------------------------
-   pfset Wells.Names                         ""
+   run.Wells.Names = ""
 
 You can give certain periods of time names if you want. For example if
 you aren’t running with ``CLM`` and you would like to have periods 
@@ -1864,10 +1797,10 @@ specified earlier.
    #-----------------------------------------------------------------------------
    # Time Cycles
    #-----------------------------------------------------------------------------
-   pfset Cycle.Names                         "constant"
-   pfset Cycle.constant.Names                "alltime"
-   pfset Cycle.constant.alltime.Length        1
-   pfset Cycle.constant.Repeat               -1
+   run.Cycle.Names = "constant"
+   run.Cycle.constant.Names = "alltime"
+   run.Cycle.constant.alltime.Length = 1
+   run.Cycle.constant.Repeat = -1
 
 Now, we assign Boundary Conditions for each face (each of the Patches in
 the domain defined before). Recall the previously stated Patches and
@@ -1885,34 +1818,35 @@ flux of 0) boundaries.
 
 ::
 
-   pfset Patch.x-lower.BCPressure.Type		      FluxConst
-   pfset Patch.x-lower.BCPressure.Cycle		      "constant"
-   pfset Patch.x-lower.BCPressure.alltime.Value	      0.0
+   run.BCPressure.PatchNames = ["x-lower", "x-upper", "y-lower", "y-upper", "z-lower", "z-upper"]
+   run.Patch['x-lower'].BCPressure.Type = "FluxConst"
+   run.Patch['x-lower'].BCPressure.Cycle = "constant"
+   run.Patch['x-lower'].BCPressure.alltime.Value = 0.0
 
-   pfset Patch.y-lower.BCPressure.Type		      FluxConst
-   pfset Patch.y-lower.BCPressure.Cycle		      "constant"
-   pfset Patch.y-lower.BCPressure.alltime.Value	      0.0
+   run.Patch['y-lower'].BCPressure.Type = "FluxConst"
+   run.Patch['y-lower'].BCPressure.Cycle = "constant"
+   run.Patch['y-lower'].BCPressure.alltime.Value = 0.0
 
-   pfset Patch.z-lower.BCPressure.Type		      FluxConst
-   pfset Patch.z-lower.BCPressure.Cycle		      "constant"
-   pfset Patch.z-lower.BCPressure.alltime.Value	      0.0
+   run.Patch['z-lower'].BCPressure.Type = "FluxConst"
+   run.Patch['z-lower'].BCPressure.Cycle = "constant"
+   run.Patch['z-lower'].BCPressure.alltime.Value = 0.0
 
-   pfset Patch.x-upper.BCPressure.Type		      FluxConst
-   pfset Patch.x-upper.BCPressure.Cycle		      "constant"
-   pfset Patch.x-upper.BCPressure.alltime.Value	      0.0
+   run.Patch['x-upper'].BCPressure.Type = "FluxConst"
+   run.Patch['x-upper'].BCPressure.Cycle = "constant"
+   run.Patch['x-upper'].BCPressure.alltime.Value = 0.0
 
-   pfset Patch.y-upper.BCPressure.Type		      FluxConst
-   pfset Patch.y-upper.BCPressure.Cycle		      "constant"
-   pfset Patch.y-upper.BCPressure.alltime.Value	      0.0
+   run.Patch['y-upper'].BCPressure.Type = "FluxConst"
+   run.Patch['y-upper'].BCPressure.Cycle = "constant"
+   run.Patch['y-upper'].BCPressure.alltime.Value = 0.0
 
-The top is set to an ``OverlandFLow`` boundary to turn on the 
+The top is set to an ``OverlandFLow`` boundary to turn on the
 fully-coupled overland flow routing.
 
 ::
 
-   pfset Patch.z-upper.BCPressure.Type		      OverlandFlow
-   pfset Patch.z-upper.BCPressure.Cycle		      "constant"
-   pfset Patch.z-upper.BCPressure.alltime.Value	      0.0
+   run.Patch['z-upper'].BCPressure.Type = "OverlandFlow"
+   run.Patch['z-upper'].BCPressure.Cycle = "constant"
+   run.Patch['z-upper'].BCPressure.alltime.Value = 0.0
 
 Next we define topographic slopes and values. These slope values were
 derived from a digital elevation model of the domain following the
@@ -1925,16 +1859,16 @@ copied into the run directory at the start of this script.
    #-----------------------------------------------------------------------------
    # Topo slopes in x-direction
    #-----------------------------------------------------------------------------
-   pfset TopoSlopesX.Type                                "PFBFile"
-   pfset TopoSlopesX.GeomNames                           "domain"
-   pfset TopoSlopesX.FileName                            "LW.slopex.pfb"
+   run.TopoSlopesX.Type = "PFBFile"
+   run.TopoSlopesX.GeomNames = "domain"
+   run.TopoSlopesX.FileName = "LW.slopex.pfb"
 
    #-----------------------------------------------------------------------------
    # Topo slopes in y-direction
    #-----------------------------------------------------------------------------
-   pfset TopoSlopesY.Type                                "PFBFile"
-   pfset TopoSlopesY.GeomNames                           "domain"
-   pfset TopoSlopesY.FileName                            "LW.slopey.pfb"
+   run.TopoSlopesY.Type = "PFBFile"
+   run.TopoSlopesY.GeomNames = "domain"
+   run.TopoSlopesY.FileName = "LW.slopey.pfb"
 
 And now we define the Mannings *n*, again just one value for the whole
 domain in this example.
@@ -1944,9 +1878,9 @@ domain in this example.
    #-----------------------------------------------------------------------------
    # Mannings coefficient
    #-----------------------------------------------------------------------------
-   pfset Mannings.Type                                   "Constant"
-   pfset Mannings.GeomNames                              "domain"
-   pfset Mannings.Geom.domain.Value                      5.52e-6
+   run.Mannings.Type = "Constant"
+   run.Mannings.GeomNames = "domain"
+   run.Mannings.Geom.domain.Value = 5.52e-6
 
 Following the same approach as we did for ``Porosity`` we define 
 the relative permeability inputs that will be used for Richards’ 
@@ -1959,38 +1893,38 @@ listed in ``Porosity.GeomNames`` must have values assigned.
    #-----------------------------------------------------------------------------
    # Relative Permeability
    #-----------------------------------------------------------------------------
-   pfset Phase.RelPerm.Type                  VanGenuchten
-   pfset Phase.RelPerm.GeomNames             "domain s1 s2 s3 s4 s5 s6 s7 s8 s9 "
+   run.Phase.RelPerm.Type = "VanGenuchten"
+   run.Phase.RelPerm.GeomNames = "domain s1 s2 s3 s4 s5 s6 s7 s8 s9"
 
-   pfset Geom.domain.RelPerm.Alpha           3.5
-   pfset Geom.domain.RelPerm.N               2.0
+   run.Geom.domain.RelPerm.Alpha = 3.5
+   run.Geom.domain.RelPerm.N = 2.0
 
-   pfset Geom.s1.RelPerm.Alpha        3.548
-   pfset Geom.s1.RelPerm.N            4.162
+   run.Geom.s1.RelPerm.Alpha = 3.548
+   run.Geom.s1.RelPerm.N = 4.162
 
-   pfset Geom.s2.RelPerm.Alpha        3.467
-   pfset Geom.s2.RelPerm.N            2.738
+   run.Geom.s2.RelPerm.Alpha = 3.467
+   run.Geom.s2.RelPerm.N = 2.738
 
-   pfset Geom.s3.RelPerm.Alpha        2.692
-   pfset Geom.s3.RelPerm.N            2.445
+   run.Geom.s3.RelPerm.Alpha = 2.692
+   run.Geom.s3.RelPerm.N = 2.445
 
-   pfset Geom.s4.RelPerm.Alpha        0.501
-   pfset Geom.s4.RelPerm.N            2.659
+   run.Geom.s4.RelPerm.Alpha = 0.501
+   run.Geom.s4.RelPerm.N = 2.659
 
-   pfset Geom.s5.RelPerm.Alpha        0.661
-   pfset Geom.s5.RelPerm.N            2.659
+   run.Geom.s5.RelPerm.Alpha = 0.661
+   run.Geom.s5.RelPerm.N = 2.659
 
-   pfset Geom.s6.RelPerm.Alpha        1.122
-   pfset Geom.s6.RelPerm.N            2.479
+   run.Geom.s6.RelPerm.Alpha = 1.122
+   run.Geom.s6.RelPerm.N = 2.479
 
-   pfset Geom.s7.RelPerm.Alpha        2.089
-   pfset Geom.s7.RelPerm.N            2.318
+   run.Geom.s7.RelPerm.Alpha = 2.089
+   run.Geom.s7.RelPerm.N = 2.318
 
-   pfset Geom.s8.RelPerm.Alpha        0.832
-   pfset Geom.s8.RelPerm.N            2.514
+   run.Geom.s8.RelPerm.Alpha = 0.832
+   run.Geom.s8.RelPerm.N = 2.514
 
-   pfset Geom.s9.RelPerm.Alpha        1.585
-   pfset Geom.s9.RelPerm.N            2.413
+   run.Geom.s9.RelPerm.Alpha = 1.585
+   run.Geom.s9.RelPerm.N = 2.413
 
 Next we do the same thing for saturation (:ref:`Saturation`)
 again using the ``VanGenuchten`` parameters Note that every geometry listed 
@@ -2001,58 +1935,58 @@ in ``Porosity.GeomNames`` must have values assigned.
    #-----------------------------------------------------------------------------
    # Saturation
    #-----------------------------------------------------------------------------
-   pfset Phase.Saturation.Type               VanGenuchten
-   pfset Phase.Saturation.GeomNames          "domain s1 s2 s3 s4 s5 s6 s7 s8 s9 "
+   run.Phase.Saturation.Type = "VanGenuchten"
+   run.Phase.Saturation.GeomNames = "domain s1 s2 s3 s4 s5 s6 s7 s8 s9"
 
-   pfset Geom.domain.Saturation.Alpha        3.5
-   pfset Geom.domain.Saturation.N            2.
-   pfset Geom.domain.Saturation.SRes         0.2
-   pfset Geom.domain.Saturation.SSat         1.0
+   run.Geom.domain.Saturation.Alpha = 3.5
+   run.Geom.domain.Saturation.N = 2.0
+   run.Geom.domain.Saturation.SRes = 0.2
+   run.Geom.domain.Saturation.SSat = 1.0
 
-   pfset Geom.s1.Saturation.Alpha        3.548
-   pfset Geom.s1.Saturation.N            4.162
-   pfset Geom.s1.Saturation.SRes         0.000001
-   pfset Geom.s1.Saturation.SSat         1.0
+   run.Geom.s1.Saturation.Alpha = 3.548
+   run.Geom.s1.Saturation.N = 4.162
+   run.Geom.s1.Saturation.SRes = 0.000001
+   run.Geom.s1.Saturation.SSat = 1.0
 
-   pfset Geom.s2.Saturation.Alpha        3.467
-   pfset Geom.s2.Saturation.N            2.738
-   pfset Geom.s2.Saturation.SRes         0.000001
-   pfset Geom.s2.Saturation.SSat         1.0
+   run.Geom.s2.Saturation.Alpha = 3.467
+   run.Geom.s2.Saturation.N = 2.738
+   run.Geom.s2.Saturation.SRes = 0.000001
+   run.Geom.s2.Saturation.SSat = 1.0
 
-   pfset Geom.s3.Saturation.Alpha        2.692
-   pfset Geom.s3.Saturation.N            2.445
-   pfset Geom.s3.Saturation.SRes         0.000001
-   pfset Geom.s3.Saturation.SSat         1.0
+   run.Geom.s3.Saturation.Alpha = 2.692
+   run.Geom.s3.Saturation.N = 2.445
+   run.Geom.s3.Saturation.SRes = 0.000001
+   run.Geom.s3.Saturation.SSat = 1.0
 
-   pfset Geom.s4.Saturation.Alpha        0.501
-   pfset Geom.s4.Saturation.N            2.659
-   pfset Geom.s4.Saturation.SRes         0.000001
-   pfset Geom.s4.Saturation.SSat         1.0
+   run.Geom.s4.Saturation.Alpha = 0.501
+   run.Geom.s4.Saturation.N = 2.659
+   run.Geom.s4.Saturation.SRes = 0.000001
+   run.Geom.s4.Saturation.SSat = 1.0
 
-   pfset Geom.s5.Saturation.Alpha        0.661
-   pfset Geom.s5.Saturation.N            2.659
-   pfset Geom.s5.Saturation.SRes         0.000001
-   pfset Geom.s5.Saturation.SSat         1.0
+   run.Geom.s5.Saturation.Alpha = 0.661
+   run.Geom.s5.Saturation.N = 2.659
+   run.Geom.s5.Saturation.SRes = 0.000001
+   run.Geom.s5.Saturation.SSat = 1.0
 
-   pfset Geom.s6.Saturation.Alpha        1.122
-   pfset Geom.s6.Saturation.N            2.479
-   pfset Geom.s6.Saturation.SRes         0.000001
-   pfset Geom.s6.Saturation.SSat         1.0
+   run.Geom.s6.Saturation.Alpha = 1.122
+   run.Geom.s6.Saturation.N = 2.479
+   run.Geom.s6.Saturation.SRes = 0.000001
+   run.Geom.s6.Saturation.SSat = 1.0
 
-   pfset Geom.s7.Saturation.Alpha        2.089
-   pfset Geom.s7.Saturation.N            2.318
-   pfset Geom.s7.Saturation.SRes         0.000001
-   pfset Geom.s7.Saturation.SSat         1.0
+   run.Geom.s7.Saturation.Alpha = 2.089
+   run.Geom.s7.Saturation.N = 2.318
+   run.Geom.s7.Saturation.SRes = 0.000001
+   run.Geom.s7.Saturation.SSat = 1.0
 
-   pfset Geom.s8.Saturation.Alpha        0.832
-   pfset Geom.s8.Saturation.N            2.514
-   pfset Geom.s8.Saturation.SRes         0.000001
-   pfset Geom.s8.Saturation.SSat         1.0
+   run.Geom.s8.Saturation.Alpha = 0.832
+   run.Geom.s8.Saturation.N = 2.514
+   run.Geom.s8.Saturation.SRes = 0.000001
+   run.Geom.s8.Saturation.SSat = 1.0
 
-   pfset Geom.s9.Saturation.Alpha        1.585
-   pfset Geom.s9.Saturation.N            2.413
-   pfset Geom.s9.Saturation.SRes         0.000001
-   pfset Geom.s9.Saturation.SSat         1.0
+   run.Geom.s9.Saturation.Alpha = 1.585
+   run.Geom.s9.Saturation.N = 2.413
+   run.Geom.s9.Saturation.SRes = 0.000001
+   run.Geom.s9.Saturation.SSat = 1.0
 
 Phase sources allows you to add sources other than wells and boundaries,
 but we do not have any so this key is constant, 0.0 over entire domain.
@@ -2062,9 +1996,9 @@ but we do not have any so this key is constant, 0.0 over entire domain.
    #-----------------------------------------------------------------------------
    # Phase sources:
    #-----------------------------------------------------------------------------
-   pfset PhaseSources.water.Type                         "Constant"
-   pfset PhaseSources.water.GeomNames                    "domain"
-   pfset PhaseSources.water.Geom.domain.Value            0.0
+   run.PhaseSources.water.Type = "Constant"
+   run.PhaseSources.water.GeomNames = "domain"
+   run.PhaseSources.water.Geom.domain.Value = 0.0
 
 In this example we are using ParFlow ``CLM`` so we must provide some parameters 
 for ``CLM`` (:ref:`CLM Solver Parameters`). Note 
@@ -2089,11 +2023,11 @@ earlier we set the ParFlow dump interval to 24.
 
 ::
 
-   pfset Solver.LSM                                      CLM
-   pfset Solver.CLM.CLMFileDir                           "clm_output/"
-   pfset Solver.CLM.Print1dOut                           False
-   pfset Solver.BinaryOutDir                             False
-   pfset Solver.CLM.CLMDumpInterval                      1
+   run.Solver.LSM = "CLM"
+   run.Solver.CLM.CLMFileDir = "clm_output/"
+   run.Solver.CLM.Print1dOut = False
+   run.Solver.BinaryOutDir = False
+   run.Solver.CLM.CLMDumpInterval = 1
 
 Next we specify the details of the meteorological forcing files 
 that ``CLM`` will read. First we provide the name of the files 
@@ -2106,23 +2040,23 @@ we specify the initial value for the CLM counter.
 
 ::
 
-   pfset Solver.CLM.MetFileName                          "NLDAS"
-   pfset Solver.CLM.MetFilePath                          "../../NLDAS/"
-   pfset Solver.CLM.MetForcing                           3D
-   pfset Solver.CLM.MetFileNT                            24
-   pfset Solver.CLM.IstepStart                           1
+   run.Solver.CLM.MetFileName = "NLDAS"
+   run.Solver.CLM.MetFilePath = "../../NLDAS/"
+   run.Solver.CLM.MetForcing = "3D"
+   run.Solver.CLM.MetFileNT = 24
+   run.Solver.CLM.IstepStart = 1
 
 This last set of ``CLM`` parameters refers to the physical 
 properties of the system. Refer to :ref:`CLM Solver Parameters` for details.
 
 ::
 
-   pfset Solver.CLM.EvapBeta                             Linear
-   pfset Solver.CLM.VegWaterStress                       Saturation
-   pfset Solver.CLM.ResSat                               0.1
-   pfset Solver.CLM.WiltingPoint                         0.12
-   pfset Solver.CLM.FieldCapacity                        0.98
-   pfset Solver.CLM.IrrigationType                       none
+   run.Solver.CLM.EvapBeta = "Linear"
+   run.Solver.CLM.VegWaterStress = "Saturation"
+   run.Solver.CLM.ResSat = 0.1
+   run.Solver.CLM.WiltingPoint = 0.12
+   run.Solver.CLM.FieldCapacity = 0.98
+   run.Solver.CLM.IrrigationType = "none"
 
 Next we set the initial conditions for the domain. In this example we
 are using a pressure ``.pfb`` file that was obtained by spinning up 
@@ -2137,10 +2071,10 @@ of this script.
    #---------------------------------------------------------
    # Initial conditions: water pressure
    #---------------------------------------------------------
-   pfset ICPressure.Type                                 PFBFile
-   pfset ICPressure.GeomNames                            domain
-   pfset Geom.domain.ICPressure.RefPatch                   z-upper
-   pfset Geom.domain.ICPressure.FileName                   press.init.pfb
+   run.ICPressure.Type = "PFBFile"
+   run.ICPressure.GeomNames = "domain"
+   run.Geom.domain.ICPressure.RefPatch = "z-upper"
+   run.Geom.domain.ICPressure.FileName = "press.init.pfb"
 
 Now we specify what outputs we would like written. In this example we
 specify that we would like to write out ``CLM`` variables as well 
@@ -2155,24 +2089,24 @@ of print options is provided in :ref:`Code Parameters`.
    # Outputs
    # ------------------------------------------------------------
    #Writing output (all pfb):
-   pfset Solver.PrintSubsurfData                         False
-   pfset Solver.PrintPressure                            True
-   pfset Solver.PrintSaturation                          True
-   pfset Solver.PrintMask                                True
+   run.Solver.PrintSubsurfData = False
+   run.Solver.PrintPressure = True
+   run.Solver.PrintSaturation = True
+   run.Solver.PrintMask = True
 
-   pfset Solver.WriteCLMBinary                           False
-   pfset Solver.PrintCLM                                 True
-   pfset Solver.WriteSiloSpecificStorage                 False
-   pfset Solver.WriteSiloMannings                        False
-   pfset Solver.WriteSiloMask                            False
-   pfset Solver.WriteSiloSlopes                          False
-   pfset Solver.WriteSiloSubsurfData                     False
-   pfset Solver.WriteSiloPressure                        False
-   pfset Solver.WriteSiloSaturation                      False
-   pfset Solver.WriteSiloEvapTrans                       False
-   pfset Solver.WriteSiloEvapTransSum                    False
-   pfset Solver.WriteSiloOverlandSum                     False
-   pfset Solver.WriteSiloCLM                             False
+   run.Solver.WriteCLMBinary = False
+   run.Solver.PrintCLM = True
+   run.Solver.WriteSiloSpecificStorage = False
+   run.Solver.WriteSiloMannings = False
+   run.Solver.WriteSiloMask = False
+   run.Solver.WriteSiloSlopes = False
+   run.Solver.WriteSiloSubsurfData = False
+   run.Solver.WriteSiloPressure = False
+   run.Solver.WriteSiloSaturation = False
+   run.Solver.WriteSiloEvapTrans = False
+   run.Solver.WriteSiloEvapTransSum = False
+   run.Solver.WriteSiloOverlandSum = False
+   run.Solver.WriteSiloCLM = False
 
 Next we specify the solver settings for the ParFlow
 (:ref:`RE Solver Parameters`). First we turn 
@@ -2185,9 +2119,9 @@ variable dz.
    # Set solver parameters
    #-----------------------------------------------------------------------------
    # ParFlow Solution
-   pfset Solver                                          Richards
-   pfset Solver.TerrainFollowingGrid                     True
-   pfset Solver.Nonlinear.VariableDz                     False
+   run.Solver = "Richards"
+   run.Solver.TerrainFollowingGrid = True
+   run.Solver.Nonlinear.VariableDz = False
 
 We then set the max solver settings and linear and nonlinear convergence
 tolerance settings. The linear system will be solved to a norm of
@@ -2199,24 +2133,24 @@ but is more expensive.
 
 ::
 
-   pfset Solver.MaxIter                                  25000
-   pfset Solver.Drop                                     1E-20
-   pfset Solver.AbsTol                                   1E-8
-   pfset Solver.MaxConvergenceFailures                   8
-   pfset Solver.Nonlinear.MaxIter                        80
-   pfset Solver.Nonlinear.ResidualTol                    1e-6
+   run.Solver.MaxIter = 25000
+   run.Solver.Drop = 1E-20
+   run.Solver.AbsTol = 1E-8
+   run.Solver.MaxConvergenceFailures = 8
+   run.Solver.Nonlinear.MaxIter = 80
+   run.Solver.Nonlinear.ResidualTol = 1e-6
 
-   pfset Solver.Nonlinear.EtaChoice                         EtaConstant
-   pfset Solver.Nonlinear.EtaValue                          0.001
-   pfset Solver.Nonlinear.UseJacobian                       True 
-   pfset Solver.Nonlinear.DerivativeEpsilon                 1e-16
-   pfset Solver.Nonlinear.StepTol				 			1e-30
-   pfset Solver.Nonlinear.Globalization                     LineSearch
-   pfset Solver.Linear.KrylovDimension                      70
-   pfset Solver.Linear.MaxRestarts                           2
+   run.Solver.Nonlinear.EtaChoice = "EtaConstant"
+   run.Solver.Nonlinear.EtaValue = 0.001
+   run.Solver.Nonlinear.UseJacobian = True
+   run.Solver.Nonlinear.DerivativeEpsilon = 1e-16
+   run.Solver.Nonlinear.StepTol = 1e-30
+   run.Solver.Nonlinear.Globalization = "LineSearch"
+   run.Solver.Linear.KrylovDimension = 70
+   run.Solver.Linear.MaxRestarts = 2
 
-   pfset Solver.Linear.Preconditioner                       PFMG
-   pfset Solver.Linear.Preconditioner.PCMatrixType     FullJacobian
+   run.Solver.Linear.Preconditioner = "PFMG"
+   run.Solver.Linear.Preconditioner.PCMatrixType = "FullJacobian"
 
 This key is just for testing the Richards’ formulation, so we are not
 using it.
@@ -2226,7 +2160,7 @@ using it.
    #-----------------------------------------------------------------------------
    # Exact solution specification for error calculations
    #-----------------------------------------------------------------------------
-   pfset KnownSolution                                   NoKnownSolution
+   run.KnownSolution = "NoKnownSolution"
 
 Next we distribute all the inputs as described by the keys in
 :ref:`PFTCL Commands`. Note the slopes are 2D files, while the
@@ -2258,9 +2192,7 @@ run name.
    #-----------------------------------------------------------------------------
    # Run Simulation
    #-----------------------------------------------------------------------------
-   set runname "LW"
-   puts $runname
-   pfrun    $runname
+   run.run()
 
 All that is left is to undistribute files.
 
