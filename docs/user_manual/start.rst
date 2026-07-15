@@ -66,9 +66,8 @@ ParFlow may also be coupled with the land surface model ``CLM`` :cite:p:`Dai03`.
 This version of ``CLM`` has been extensively modified to be called 
 from within ParFlow as a subroutine, to support parallel infrastructure including I/O and most importantly with modified physics 
 to support coupled operation to best utilize the integrated hydrology in ParFlow :cite:p:`MM05, KM08a`. 
-To couple ``CLM`` into ParFlow first the ``–with-clm`` 
-option is needed in the ``./configure`` command as indicated in Installing ParFlow. Second, the ``CLM`` module needs 
-to be called from within ParFlow, this is done using the following solver key::
+To couple ``CLM`` into ParFlow first build parflow with cmake command line option  ``-DPARFLOW_HAVE_CLM=TRUE``. 
+Second, the ``CLM`` module needs to be called from within ParFlow, this is done using the following solver key::
    
     run.Solver.LSM = "CLM"
 

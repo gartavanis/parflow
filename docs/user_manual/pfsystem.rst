@@ -294,7 +294,14 @@ Create a file such as 'default_single.py' with python code below:
 
       run = Run("dsingle", __file__)
       run.FileVersion = 4
-      # Set other keys to configure this parflow run ...
+
+      # Set parflow keys to configure this parflow run ...
+
+      # Generate subgrids in the pfb files used in the example:
+      for filename in os.listdir("."):
+         if filename.endswith(".pfb"):
+            run.dist(filename)
+
       # Start the parflow run
       run.run()
 
@@ -408,26 +415,32 @@ Directory of Test Cases
 
 ParFlow comes with a directory containing a few simple input files for
 use as templates in making new files and for use in testing the code.
-These files sit in the ``/test`` directory described earlier. 
+These files sit in the ``/test`` directory described earlier within the
+subfolder ``/test/python``. If you set the PARFLOW_DIR environment
+variable to point to a parflow build and activate a python virtual
+environment containing the pftools module you can run any test,
+for example: ``python creator2d.py``.
+
+
 This section gives a brief description of the problems in this directory.
 
 .. container:: description
 
-   ``crater2D.tcl`` An example of a two-dimensional, variably-saturated 
+   ``crater2D.py`` An example of a two-dimensional, variably-saturated 
    crater infiltration problem with time-varying boundary conditions. 
    It uses the solid file ``crater2D.pfsol``.
 
-   ``default_richards.tcl`` The default variably-saturated Richards’ 
+   ``default_richards.py`` The default variably-saturated Richards’ 
    Equation simulation test script.
 
-   ``default_single.tcl`` The default parflow, single-processor, 
+   ``default_single.py`` The default parflow, single-processor, 
    fully-saturated test script.
 
-   ``forsyth2.tcl`` An example two-dimensional, variably-saturated 
+   ``forsyth2.py`` An example two-dimensional, variably-saturated 
    infiltration problem with layers of different hydraulic properties. 
    It runs problem 2 in :cite:t:`FWP95` and uses the solid file ``fors2_hf.pfsol``.
 
-   ``harvey.flow.tcl`` An example from :cite:t:`MWH07` for the Cape Cod bacterial 
+   ``harvey.flow.py`` An example from :cite:t:`MWH07` for the Cape Cod bacterial 
    injection site. This example is a three-dimensional, fully-saturated 
    flow problem with spatially heterogeneous media (using a correlated, 
    random field approach). It also provides examples of how tcl/tk 
@@ -435,32 +448,32 @@ This section gives a brief description of the problems in this directory.
    or to run other scripts or programs. It uses the input text 
    file ``stats4.txt``. This input script is fully detailed in :ref:`Tutorial`.
 
-   ``default_overland.tcl`` An overland flow boundary condition 
+   ``default_overland.py`` An overland flow boundary condition 
    test and example script based loosely on the V-catchment 
    problem in :cite:t:`KM06`. There are options provided to expand this problem 
    into other overland flow-type, transient boundary-type problems 
    included in the file as well.
 
-   ``LW_var_dz_spinup.tcl`` An example that uses the Little Washita 
+   ``LW_var_dz_spinup.py`` An example that uses the Little Washita 
    domain to demonstrate a steady-state spinup initialization using 
    P-E forcing. It also demonstrates the variable dz keys.
 
-   ``LW_var_dz.tcl`` An example that uses the Little Washita domain 
+   ``LW_var_dz.py`` An example that uses the Little Washita domain 
    to demonstrate surface flow network development. It also uses the 
    variable dz keys.
 
-   ``Evap_Trans_test.tcl`` An example that modifies the ``default_overland.tcl`` 
+   ``Evap_Trans_test.py`` An example that modifies the ``default_overland.py`` 
    to demonstrate steady-state external flux ``.pfb`` files.
 
-   ``overland_flux.tcl`` An example that modifies the ``default_overland.tcl`` 
+   ``overland_flux.py`` An example that modifies the ``default_overland.py`` 
    to demonstrate transient external flux ``.pfb`` files.
 
-   ``/clm/clm.tcl`` An example of how to use ParFlow coupled 
+   ``/clm/clm.py`` An example of how to use ParFlow coupled 
    to ``clm``. This directory also includes ``clm``-specific input. 
    Note: this problem will only run if ``–with-clm`` flag is used 
    during the configure and build process.
 
-   ``water_balance_x.tcl`` and ``water_balance_y.tcl``. An overland 
+   ``water_balance_x.py`` and ``water_balance_y.py``. An overland 
    flow example script that uses the water-balance routines integrated 
    into ``pftools``. These two problems are based on simple overland 
    flow conditions with slopes primarily in the x or y-directions. 
@@ -468,15 +481,15 @@ This section gives a brief description of the problems in this directory.
    is used, that is a ``–with-silo=PATH`` flag is used during the 
    configure and build process.
 
-   ``pfmg.tcl`` and ``pfmg_octree.tcl`` Tests of the external 
+   ``pfmg.py`` and ``pfmg_octree.py`` Tests of the external 
    Hypre preconditioner options. Note: this problem only will 
    run if the Hypre capability is used, that is a ``–with-hypre=PATH`` 
    flag is used during the configure and build process.
 
-   ``test_x.tcl`` A test problem for the Richards’ solver that 
+   ``test_x.py`` A test problem for the Richards’ solver that 
    compares output to an analytical solution.
 
-   ``/washita/tcl_scripts/LW_Test.tcl`` A three day simulation 
+   ``/washita/tcl_scripts/LW_Test.py`` A three day simulation 
    of the Little Washita domain using ParFlow ``CLM`` with 3D forcings.
 
 .. _Tutorial:
@@ -484,42 +497,26 @@ This section gives a brief description of the problems in this directory.
 Annotated Input Scripts
 -----------------------
 
-This section contains two annotated input scripts:
+This section describes two annotated input scripts:
 
--  §3.6.1 :ref:`Harvey Flow Example` contains the harvey flow 
-   example (``harvey.flow.tcl``) which is an idealized domain 
+-  §3.6.1 :ref:`Harvey Flow Example` in the folder ``test/python`` contains the harvey flow 
+   example (``harvey.flow.py``) which is an idealized domain 
    with a heterogeneous subsurface. The example also demonstrates 
    how to generate multiple realizations of the subsurface and 
    add pumping wells.
 
--  §3.6.2 :ref:`Little Washita Example` contains the Little Washita
-   example (``LW_Test.tcl``) which simulates a moderately sized 
+-  §3.6.2 :ref:`Little Washita Example` in the folder ``test/python/washita`` 
+   contains the Little Washita
+   example (``LW_Test.py``) which simulates a moderately sized 
    (41km by 41km) real domain using ParFlow ``CLM`` with 3D 
    meteorological forcings.
 
-To run ParFlow, you use a script written in Tcl/TK. This script has a
-lot of flexibility, as it is somewhere in between a program and a user
-interface. The tcl script gives ParFlow the data it requires (or tells
-ParFlow where to find or read in that data) and also tells ParFlow to
-run.
+You can run these examples in the same way you run tests in :ref:`Test Directory`.
+You must set the PARFLOW_DIR environment
+variable to point to a parflow build and activate a python virtual
+environment containing the pftools module then you can run:
+``python harvey.flow.py``.
 
-To run the simulation:
-
-#. Make any modifications to the tcl input script (and give a new name,
-   if you want to)
-
-#. Save the tcl script
-
-#. For Linux/Unix/OSX: invoke the script from the command line using the
-   tcl-shell, this looks like: ``>tclsh filename.tcl``
-
-#. Wait patiently for the command prompt to return (Linux/Unix/OSX)
-   indicating that ParFlow has finished. Intermediate files are written
-   as the simulation runs, however there is no other indication that
-   ParFlow is running.
-
-To modify a tcl script, you right-click and select edit from the menu.
-If you select open, you will run the script.
 
 **Note:** The units for **K** (ım/d, usually) are critical to the entire
 construction. These length and time units for **K** set the units for
@@ -534,7 +531,7 @@ length (meters), so pressure is now so-called pressure-head.
 Harvey Flow Example
 ~~~~~~~~~~~~~~~~~~~
 
-This tutorial matches the ``harvey_flow.tcl`` file found in 
+This tutorial matches the ``harvey_flow.py`` file found in 
 the ``/test`` directory. This example is directly from :cite:t:`MWH07`. 
 This example demonstrates how to set up and run a fully saturated 
 flow problem with heterogeneous hydraulic conductivity using the 
@@ -546,30 +543,33 @@ for a Monte Carlo simulation. This example is the basis for several
 fully-saturated ParFlow applications :cite:p:`Siirila12a,Siirila12b,SNSMM10,Atchley13a,Atchley13b,Cui14`.
 
 When the script runs, it creates a new directory named ``/flow`` right 
-in the directory where the tcl script is stored. ParFlow then puts all 
+in the directory where the .py script is stored. ParFlow then puts all 
 its output in ``/flow``. Of course, you can change the name and location 
 of this output directory by modifying the tcl script that runs ParFlow.
 
-Now for the tcl script:
+Now for the python script:
 
 ::
 
    #
-   # Import the ParFlow TCL package
+   # Import the ParFlow package
    #
 
-These first three lines are what link ParFlow and the tcl script, thus
-allowing you to use a set of commands seen later, such as ``pfset``, etc.
+These first lines loads the parflow python module
+and creates a run object you can use to set parflow key values.
 
 ::
 
-   import parflow
-   run = parflow.Run("test_run", __file__)
+   import os, sys
+   from parflow import Run
+
+   run_name = "harvey_flow.1"
+   hflow = Run(run_name, __file__)
 
    #-----------------------------------------------------------------------------
    # File input version number
    #-----------------------------------------------------------------------------
-   run.FileVersion = 4
+   hflow.FileVersion = 4
 
 These next lines set the parallel process topology. The domain is
 divided in *x*, *y* and *z* by ``P``, ``Q`` and ``R``. The total number
@@ -581,9 +581,9 @@ of processors is ``P*Q*R`` (see :ref:`Computing Topology`).
    # Process Topology
    #----------------------------------------------------------------------------
 
-   run.Process.Topology.P = 1
-   run.Process.Topology.Q = 1
-   run.Process.Topology.R = 1
+   hflow.Process.Topology.P = 1
+   hflow.Process.Topology.Q = 1
+   hflow.Process.Topology.R = 1
 
 Next we set up the computational grid (*see*
 :ref:`Defining the Problem` and :ref:`Computational Grid`).
@@ -598,26 +598,26 @@ Locate the origin in the domain.
 
 ::
 
-   run.ComputationalGrid.Lower.X = 0.0
-   run.ComputationalGrid.Lower.Y = 0.0
-   run.ComputationalGrid.Lower.Z = 0.0
+   hflow.ComputationalGrid.Lower.X = 0.0
+   hflow.ComputationalGrid.Lower.Y = 0.0
+   hflow.ComputationalGrid.Lower.Z = 0.0
 
 Define the size of the domain grid block. Length units, same as those on
 hydraulic conductivity.
 
 ::
 
-   run.ComputationalGrid.DX = 0.34
-   run.ComputationalGrid.DY = 0.34
-   run.ComputationalGrid.DZ = 0.038
+   hflow.ComputationalGrid.DX = 0.34
+   hflow.ComputationalGrid.DY = 0.34
+   hflow.ComputationalGrid.DZ = 0.038
 
 Define the number of grid blocks in the domain.
 
 ::
 
-   run.ComputationalGrid.NX = 50
-   run.ComputationalGrid.NY = 30
-   run.ComputationalGrid.NZ = 100
+   hflow.ComputationalGrid.NX = 50
+   hflow.ComputationalGrid.NY = 30
+   hflow.ComputationalGrid.NZ = 100
 
 This next piece is comparable to a pre-declaration of variables. These
 will be areas in our domain geometry. The regions themselves will be
@@ -631,7 +631,7 @@ these as well. For Cape Cod, we have the entire domain, and also the 2
    #----------------------------------------------------------------------------
    # The Names of the GeomInputs
    #----------------------------------------------------------------------------
-   run.GeomInput.Names = "domain_input upper_aquifer_input lower_aquifer_input"
+   hflow.GeomInput.Names = "domain_input upper_aquifer_input lower_aquifer_input"
 
 Now you characterize your domain that you just pre-declared to be a ``box`` 
 (see :ref:`Geometries`), and you also give it a name, ``domain``.
@@ -641,8 +641,8 @@ Now you characterize your domain that you just pre-declared to be a ``box``
    #----------------------------------------------------------------------------
    # Domain Geometry Input
    #----------------------------------------------------------------------------
-   run.GeomInput.domain_input.InputType = "Box"
-   run.GeomInput.domain_input.GeomName = "domain"
+   hflow.GeomInput.domain_input.InputType = "Box"
+   hflow.GeomInput.domain_input.GeomName = "domain"
 
 Here, you set the limits in space for your entire domain. The span from ``Lower.X`` 
 to ``Upper.X`` will be equal to the product of ``ComputationalGrid.DX`` 
@@ -656,15 +656,15 @@ limit of the problem in space.
    #----------------------------------------------------------------------------
    # Domain Geometry
    #----------------------------------------------------------------------------
-   run.Geom.domain.Lower.X = 0.0
-   run.Geom.domain.Lower.Y = 0.0
-   run.Geom.domain.Lower.Z = 0.0
+   hflow.Geom.domain.Lower.X = 0.0
+   hflow.Geom.domain.Lower.Y = 0.0
+   hflow.Geom.domain.Lower.Z = 0.0
 
-   run.Geom.domain.Upper.X = 17.0
-   run.Geom.domain.Upper.Y = 10.2
-   run.Geom.domain.Upper.Z = 3.8
+   hflow.Geom.domain.Upper.X = 17.0
+   hflow.Geom.domain.Upper.Y = 10.2
+   hflow.Geom.domain.Upper.Z = 3.8
 
-   run.Geom.domain.Patches = "left right front back bottom top"
+   hflow.Geom.domain.Patches = "left right front back bottom top"
 
 Just like domain geometry, you also set the limits in space for the
 individual components (upper and lower, as defined in the Names of
@@ -676,36 +676,36 @@ as they are internal to the domain.
    #----------------------------------------------------------------------------
    # Upper Aquifer Geometry Input
    #----------------------------------------------------------------------------
-   run.GeomInput.upper_aquifer_input.InputType = "Box"
-   run.GeomInput.upper_aquifer_input.GeomName = "upper_aquifer"
+   hflow.GeomInput.upper_aquifer_input.InputType = "Box"
+   hflow.GeomInput.upper_aquifer_input.GeomName = "upper_aquifer"
 
    #----------------------------------------------------------------------------
    # Upper Aquifer Geometry
    #----------------------------------------------------------------------------
-   run.Geom.upper_aquifer.Lower.X = 0.0
-   run.Geom.upper_aquifer.Lower.Y = 0.0
-   run.Geom.upper_aquifer.Lower.Z = 1.5
+   hflow.Geom.upper_aquifer.Lower.X = 0.0
+   hflow.Geom.upper_aquifer.Lower.Y = 0.0
+   hflow.Geom.upper_aquifer.Lower.Z = 1.5
 
-   run.Geom.upper_aquifer.Upper.X = 17.0
-   run.Geom.upper_aquifer.Upper.Y = 10.2
-   run.Geom.upper_aquifer.Upper.Z = 1.5
+   hflow.Geom.upper_aquifer.Upper.X = 17.0
+   hflow.Geom.upper_aquifer.Upper.Y = 10.2
+   hflow.Geom.upper_aquifer.Upper.Z = 1.5
 
    #----------------------------------------------------------------------------
    # Lower Aquifer Geometry Input
    #----------------------------------------------------------------------------
-   run.GeomInput.lower_aquifer_input.InputType = "Box"
-   run.GeomInput.lower_aquifer_input.GeomName = "lower_aquifer"
+   hflow.GeomInput.lower_aquifer_input.InputType = "Box"
+   hflow.GeomInput.lower_aquifer_input.GeomName = "lower_aquifer"
 
    #----------------------------------------------------------------------------
    # Lower Aquifer Geometry
    #----------------------------------------------------------------------------
-   run.Geom.lower_aquifer.Lower.X = 0.0
-   run.Geom.lower_aquifer.Lower.Y = 0.0
-   run.Geom.lower_aquifer.Lower.Z = 0.0
+   hflow.Geom.lower_aquifer.Lower.X = 0.0
+   hflow.Geom.lower_aquifer.Lower.Y = 0.0
+   hflow.Geom.lower_aquifer.Lower.Z = 0.0
 
-   run.Geom.lower_aquifer.Upper.X = 17.0
-   run.Geom.lower_aquifer.Upper.Y = 10.2
-   run.Geom.lower_aquifer.Upper.Z = 1.5
+   hflow.Geom.lower_aquifer.Upper.X = 17.0
+   hflow.Geom.lower_aquifer.Upper.Y = 10.2
+   hflow.Geom.lower_aquifer.Upper.Z = 1.5
 
 Now you add permeability data to the domain sections defined above
 (:ref:`Permeability`). You can reassign values simply by
@@ -722,7 +722,7 @@ Name the permeability regions you will describe.
 
 ::
 
-   run.Geom.Perm.Names = "upper_aquifer lower_aquifer"
+   hflow.Geom.Perm.Names = "upper_aquifer lower_aquifer"
 
 You can set, for example homogeneous, constant permeability, or you can
 generate a random field that meets your statistical requirements. To
@@ -730,32 +730,29 @@ define a constant permeability for the entire domain:
 
 ::
 
-   #pfset Geom.domain.Perm.Type     Constant
-   #pfset Geom.domain.Perm.Value    4.0
+   # hflow.Geom.domain.Perm.Type = "Constant"
+   # hflow.Geom.domain.Perm.Value = 4.0
 
 However, for Cape Cod, we did not want a constant permeability field, so
 we instead generated a random permeability field meeting our statistical
 parameters for each the upper and lower zones. Third from the bottom is
 the ``Seed``. This is a random starting point to generate the K field. 
-Pick any large ODD number. First we do something tricky with Tcl/TK. 
-We use the native commands within tcl to open a text file and read in 
-locally set variables. Note we use set here and not pfset. One is a native 
-tcl command, the other a ParFlow-specific command. For this problem, we 
-are linking the parameter estimation code, PEST to ParFlow. PEST writes 
-out the ascii file ``stats4.txt`` (also located in the ``/test`` directory) 
-as the result of a calibration run. Since we are not coupled to PEST in this 
-example, we just read in the file and use the values to assign statistical properties.
+Pick any large ODD number. 
+
+We use python to open a file to read a set of variables from the
+ascii file ``stats4.txt`` also located in the ``/test`` directory,
+These values are a result of a calibration run.
 
 ::
 
-   # we open a file, in this case from PEST to set upper and lower # kg and sigma
+   # we open a file, to set upper and lower # kg and sigma
    #
-   set fileId [open stats4.txt r 0600]
-   set kgu [gets $fileId]
-   set varu [gets $fileId]
-   set kgl [gets $fileId]
-   set varl [gets $fileId]
-   close $fileId
+   file = open("stats4.txt", "r")
+   lines = file.readlines()
+   kgu = float(lines[0])
+   varu = float(lines[1])
+   kgl = float(lines[2])
+   varl = float(lines[3])
 
 Now we set the heterogeneous parameters for the Upper and Lower aquifers
 (*see* :ref:`Permeability`). Note the special section at the
@@ -765,44 +762,42 @@ deviation to our values we read in from a file. **Note:** ParFlow uses
 
 ::
 
-   pfset Geom.upper_aquifer.Perm.Type "TurnBands"
-   pfset Geom.upper_aquifer.Perm.LambdaX  3.60
-   pfset Geom.upper_aquifer.Perm.LambdaY  3.60
-   pfset Geom.upper_aquifer.Perm.LambdaZ  0.19
-   pfset Geom.upper_aquifer.Perm.GeomMean  112.00
+   hflow.Geom.upper_aquifer.Perm.Type = "TurnBands"
+   hflow.Geom.upper_aquifer.Perm.LambdaX = 3.60
+   hflow.Geom.upper_aquifer.Perm.LambdaY = 3.60
+   hflow.Geom.upper_aquifer.Perm.LambdaZ = 0.19
+   hflow.Geom.upper_aquifer.Perm.GeomMean = 112.00
 
-   pfset Geom.upper_aquifer.Perm.Sigma   1.0
-   pfset Geom.upper_aquifer.Perm.Sigma   0.48989794
-   pfset Geom.upper_aquifer.Perm.NumLines 150
-   pfset Geom.upper_aquifer.Perm.RZeta  5.0
-   pfset Geom.upper_aquifer.Perm.KMax  100.0
-   pfset Geom.upper_aquifer.Perm.DelK  0.2
-   pfset Geom.upper_aquifer.Perm.Seed  33333
-   pfset Geom.upper_aquifer.Perm.LogNormal Log
-   pfset Geom.upper_aquifer.Perm.StratType Bottom
-   pfset Geom.lower_aquifer.Perm.Type "TurnBands"
-   pfset Geom.lower_aquifer.Perm.LambdaX  3.60
-   pfset Geom.lower_aquifer.Perm.LambdaY  3.60
-   pfset Geom.lower_aquifer.Perm.LambdaZ  0.19
+   hflow.Geom.upper_aquifer.Perm.Sigma = 1.0
+   hflow.Geom.upper_aquifer.Perm.Sigma = 0.48989794
+   hflow.Geom.upper_aquifer.Perm.NumLines = 150
+   hflow.Geom.upper_aquifer.Perm.RZeta = 5.0
+   hflow.Geom.upper_aquifer.Perm.KMax = 100.0000001
+   hflow.Geom.upper_aquifer.Perm.DelK = 0.2
+   hflow.Geom.upper_aquifer.Perm.Seed = 33333
+   hflow.Geom.upper_aquifer.Perm.LogNormal = "Log"
+   hflow.Geom.upper_aquifer.Perm.StratType = "Bottom"
+   hflow.Geom.lower_aquifer.Perm.Type = "TurnBands"
+   hflow.Geom.lower_aquifer.Perm.LambdaX = 3.60
+   hflow.Geom.lower_aquifer.Perm.LambdaY = 3.60
+   hflow.Geom.lower_aquifer.Perm.LambdaZ = 0.19
 
-   pfset Geom.lower_aquifer.Perm.GeomMean  77.0
-   pfset Geom.lower_aquifer.Perm.Sigma   1.0
-   pfset Geom.lower_aquifer.Perm.Sigma   0.48989794
-   pfset Geom.lower_aquifer.Perm.NumLines 150
-   pfset Geom.lower_aquifer.Perm.RZeta  5.0
-   pfset Geom.lower_aquifer.Perm.KMax  100.0
-   pfset Geom.lower_aquifer.Perm.DelK  0.2
-   pfset Geom.lower_aquifer.Perm.Seed  33333
-   pfset Geom.lower_aquifer.Perm.LogNormal Log
-   pfset Geom.lower_aquifer.Perm.StratType Bottom
+   hflow.Geom.lower_aquifer.Perm.GeomMean = 77.0
+   hflow.Geom.lower_aquifer.Perm.Sigma = 1.0
+   hflow.Geom.lower_aquifer.Perm.Sigma = 0.48989794
+   hflow.Geom.lower_aquifer.Perm.NumLines = 150
+   hflow.Geom.lower_aquifer.Perm.RZeta = 5.0
+   hflow.Geom.lower_aquifer.Perm.KMax = 100.0000001
+   hflow.Geom.lower_aquifer.Perm.DelK = 0.2
+   hflow.Geom.lower_aquifer.Perm.Seed = 33333
+   hflow.Geom.lower_aquifer.Perm.LogNormal = "Log"
+   hflow.Geom.lower_aquifer.Perm.StratType = "Bottom"
 
-   #pfset lower aqu and upper aq stats to pest/read in values
+   hflow.Geom.upper_aquifer.Perm.GeomMean = kgu
+   hflow.Geom.upper_aquifer.Perm.Sigma = varu
 
-   pfset Geom.upper_aquifer.Perm.GeomMean  $kgu
-   pfset Geom.upper_aquifer.Perm.Sigma  $varu
-
-   pfset Geom.lower_aquifer.Perm.GeomMean  $kgl
-   pfset Geom.lower_aquifer.Perm.Sigma  $varl
+   hflow.Geom.lower_aquifer.Perm.GeomMean = kgl
+   hflow.Geom.lower_aquifer.Perm.Sigma = varl   
 
 The following section allows you to specify the permeability tensor. In
 the case below, permeability is symmetric in all directions (x, y, and
@@ -810,13 +805,13 @@ z) and therefore each is set to 1.0.
 
 ::
 
-   run.Perm.TensorType = "TensorByGeom"
+   hflow.Perm.TensorType = "TensorByGeom"
 
-   run.Geom.Perm.TensorByGeom.Names = "domain"
+   hflow.Geom.Perm.TensorByGeom.Names = "domain"
 
-   run.Geom.domain.Perm.TensorValX = 1.0
-   run.Geom.domain.Perm.TensorValY = 1.0
-   run.Geom.domain.Perm.TensorValZ = 1.0
+   hflow.Geom.domain.Perm.TensorValX = 1.0
+   hflow.Geom.domain.Perm.TensorValY = 1.0
+   hflow.Geom.domain.Perm.TensorValZ = 1.0
 
 Next we set the specific storage, though this is not used in the
 IMPES/steady-state calculation.
@@ -829,9 +824,9 @@ IMPES/steady-state calculation.
    # specific storage does not figure into the impes (fully sat) 
    # case but we still need a key for it
 
-   run.SpecificStorage.Type = "Constant"
-   run.SpecificStorage.GeomNames = ""
-   run.Geom.domain.SpecificStorage.Value = 1.0e-4
+   hflow.SpecificStorage.Type = "Constant"
+   hflow.SpecificStorage.GeomNames = ""
+   hflow.Geom.domain.SpecificStorage.Value = 1.0e-4
 
 ParFlow has the capability to deal with a multiphase system, but we only
 have one (water) at Cape Cod. As we stated earlier, we set density and
@@ -849,13 +844,13 @@ which is what we want for this problem.
    # Phases
    #----------------------------------------------------------------------------
 
-   run.Phase.Names = "water"
+   hflow.Phase.Names = "water"
 
-   run.Phase.water.Density.Type = "Constant"
-   run.Phase.water.Density.Value = 1.0
+   hflow.Phase.water.Density.Type = "Constant"
+   hflow.Phase.water.Density.Value = 1.0
 
-   run.Phase.water.Viscosity.Type = "Constant"
-   run.Phase.water.Viscosity.Value = 1.0
+   hflow.Phase.water.Viscosity.Type = "Constant"
+   hflow.Phase.water.Viscosity.Value = 1.0
 
 We will not use the ParFlow grid based transport scheme. We will then
 leave contaminants blank because we will use a different code to model
@@ -866,7 +861,7 @@ leave contaminants blank because we will use a different code to model
    #----------------------------------------------------------------------------
    # Contaminants
    #----------------------------------------------------------------------------
-   run.Contaminants.Names = ""
+   hflow.Contaminants.Names = ""
 
 As with density and viscosity, gravity is normalized here. If we used
 the true value (in the *[L]* and *[T]* units of hydraulic conductivity)
@@ -879,27 +874,26 @@ that the code calculates hydraulic conductivity.
    # Gravity
    #----------------------------------------------------------------------------
 
-   run.Gravity = 1.0
-
-   #----------------------------------------------------------------------------
-   # Setup timing info
-   #----------------------------------------------------------------------------
+   hflow.Gravity = 1.0
 
 This basic time unit of 1.0 is used for transient boundary and well
 conditions. We are not using those features in this example.
 
 ::
 
-   run.TimingInfo.BaseUnit = 1.0
+   #----------------------------------------------------------------------------
+   # Setup timing info
+   #----------------------------------------------------------------------------
+   hflow.TimingInfo.BaseUnit = 1.0
 
 Cape Cod is a steady state problem, so these timing features are again
 unused, but need to be included.
 
 ::
 
-   run.TimingInfo.StartCount = -1
-   run.TimingInfo.StartTime = 0.0
-   run.TimingInfo.StopTime = 0.0
+   hflow.TimingInfo.StartCount = -1
+   hflow.TimingInfo.StartTime = 0.0
+   hflow.TimingInfo.StopTime = 0.0
 
 Set the ``dump interval`` to -1 to report info at the end of every 
 calculation, which in this case is only when steady state has been 
@@ -907,7 +901,7 @@ reached.
 
 ::
 
-   run.TimingInfo.DumpInterval = -1
+   hflow.TimingInfo.DumpInterval = -1
 
 Next, we assign the porosity (*see* §6.1.12 :ref:`Porosity`). For the
 Cape Cod, the porosity is 0.39.
@@ -918,10 +912,10 @@ Cape Cod, the porosity is 0.39.
    # Porosity
    #----------------------------------------------------------------------------
 
-   run.Geom.Porosity.GeomNames = "domain"
+   hflow.Geom.Porosity.GeomNames = "domain"
 
-   run.Geom.domain.Porosity.Type = "Constant"
-   run.Geom.domain.Porosity.Value = 0.390
+   hflow.Geom.domain.Porosity.Type = "Constant"
+   hflow.Geom.domain.Porosity.Value = 0.390
 
 Having defined the geometry of our problem before and named it ``domain``, we
 are now ready to report/upload that problem, which we do here.
@@ -931,7 +925,7 @@ are now ready to report/upload that problem, which we do here.
    #----------------------------------------------------------------------------
    # Domain
    #----------------------------------------------------------------------------
-   run.Domain.GeomName = "domain"
+   hflow.Domain.GeomName = "domain"
 
 Mobility between phases is set to 1.0 because we only have one phase
 (water).
@@ -941,8 +935,8 @@ Mobility between phases is set to 1.0 because we only have one phase
    #----------------------------------------------------------------------------
    # Mobility
    #----------------------------------------------------------------------------
-   run.Phase.water.Mobility.Type = "Constant"
-   run.Phase.water.Mobility.Value = 1.0
+   hflow.Phase.water.Mobility.Type = "Constant"
+   hflow.Phase.water.Mobility.Value = 1.0
 
 Again, ParFlow has more capabilities than we are using here in the Cape
 Cod example. For this example, we handle monitoring wells in a separate
@@ -958,7 +952,7 @@ pumping wells in this script.
    #----------------------------------------------------------------------------
    # Wells
    #----------------------------------------------------------------------------
-   run.Wells.Names = ""
+   hflow.Wells.Names = ""
 
 You can give certain periods of time names if you want to (ie.
 Pre-injection, post-injection, etc). Here, however we do not have
@@ -974,10 +968,10 @@ specified earlier.
    #----------------------------------------------------------------------------
    # Time Cycles
    #----------------------------------------------------------------------------
-   run.Cycle.Names = "constant"
-   run.Cycle.constant.Names = "alltime"
-   run.Cycle.constant.alltime.Length = 1
-   run.Cycle.constant.Repeat = -1
+   hflow.Cycle.Names = "constant"
+   hflow.Cycle.constant.Names = "alltime"
+   hflow.Cycle.constant.alltime.Length = 1
+   hflow.Cycle.constant.Repeat = -1
 
 Now, we assign Boundary Conditions for each face (each of the Patches in
 the domain defined before). Recall the previously stated Patches and
@@ -985,7 +979,7 @@ associate them with the boundary conditions that follow.
 
 ::
 
-   run.BCPressure.PatchNames = "left right front back bottom top"
+   hflow.BCPressure.PatchNames = "left right front back bottom top"
 
 These are Dirichlet BCs (i.e. constant head over cell so the pressure
 head is set to hydrostatic– *see* :ref:`Boundary Conditions: Pressure`). There is no time
@@ -996,23 +990,23 @@ head conditions.
 
 ::
 
-   run.Patch.left.BCPressure.Type = "DirEquilRefPatch"
-   run.Patch.left.BCPressure.Cycle = "constant"
-   run.Patch.left.BCPressure.RefGeom = "domain"
+   hflow.Patch.left.BCPressure.Type = "DirEquilRefPatch"
+   hflow.Patch.left.BCPressure.Cycle = "constant"
+   hflow.Patch.left.BCPressure.RefGeom = "domain"
 
 Reference the current (left) patch to the bottom to define the line of
 intersection between the two.
 
 ::
 
-   run.Patch.left.BCPressure.RefPatch = "bottom"
+   hflow.Patch.left.BCPressure.RefPatch = "bottom"
 
 Set the head permanently to 10.0m. Pressure-head will of course vary top
 to bottom because of hydrostatics, but head potential will be constant.
 
 ::
 
-   run.Patch.left.BCPressure.alltime.Value = 10.0
+   hflow.Patch.left.BCPressure.alltime.Value = 10.0
 
 Repeat the declarations for the rest of the faces of the domain. The
 left to right (*X*) dimension is aligned with the hydraulic gradient.
@@ -1021,27 +1015,27 @@ the length of the domain corresponds to the correct hydraulic gradient.
 
 ::
 
-   run.Patch.right.BCPressure.Type = "DirEquilRefPatch"
-   run.Patch.right.BCPressure.Cycle = "constant"
-   run.Patch.right.BCPressure.RefGeom = "domain"
-   run.Patch.right.BCPressure.RefPatch = "bottom"
-   run.Patch.right.BCPressure.alltime.Value = 9.97501
+   hflow.Patch.right.BCPressure.Type = "DirEquilRefPatch"
+   hflow.Patch.right.BCPressure.Cycle = "constant"
+   hflow.Patch.right.BCPressure.RefGeom = "domain"
+   hflow.Patch.right.BCPressure.RefPatch = "bottom"
+   hflow.Patch.right.BCPressure.alltime.Value = 9.97501
 
-   run.Patch.front.BCPressure.Type = "FluxConst"
-   run.Patch.front.BCPressure.Cycle = "constant"
-   run.Patch.front.BCPressure.alltime.Value = 0.0
+   hflow.Patch.front.BCPressure.Type = "FluxConst"
+   hflow.Patch.front.BCPressure.Cycle = "constant"
+   hflow.Patch.front.BCPressure.alltime.Value = 0.0
 
-   run.Patch.back.BCPressure.Type = "FluxConst"
-   run.Patch.back.BCPressure.Cycle = "constant"
-   run.Patch.back.BCPressure.alltime.Value = 0.0
+   hflow.Patch.back.BCPressure.Type = "FluxConst"
+   hflow.Patch.back.BCPressure.Cycle = "constant"
+   hflow.Patch.back.BCPressure.alltime.Value = 0.0
 
-   run.Patch.bottom.BCPressure.Type = "FluxConst"
-   run.Patch.bottom.BCPressure.Cycle = "constant"
-   run.Patch.bottom.BCPressure.alltime.Value = 0.0
+   hflow.Patch.bottom.BCPressure.Type = "FluxConst"
+   hflow.Patch.bottom.BCPressure.Cycle = "constant"
+   hflow.Patch.bottom.BCPressure.alltime.Value = 0.0
 
-   run.Patch.top.BCPressure.Type = "FluxConst"
-   run.Patch.top.BCPressure.Cycle = "constant"
-   run.Patch.top.BCPressure.alltime.Value = 0.0
+   hflow.Patch.top.BCPressure.Type = "FluxConst"
+   hflow.Patch.top.BCPressure.Cycle = "constant"
+   hflow.Patch.top.BCPressure.alltime.Value = 0.0
 
 Next we define topographic slopes and Mannings *n* values. These are not
 used, since we do not solve for overland flow. However, the keys still
@@ -1055,24 +1049,24 @@ need to appear in the input script.
    # topo slopes do not figure into the impes (fully sat) case but we still
    # need keys for them
 
-   run.TopoSlopesX.Type = "Constant"
-   run.TopoSlopesX.GeomNames = ""
+   hflow.TopoSlopesX.Type = "Constant"
+   hflow.TopoSlopesX.GeomNames = ""
 
-   run.TopoSlopesX.Geom.domain.Value = 0.0
+   hflow.TopoSlopesX.Geom.domain.Value = 0.0
 
    #---------------------------------------------------------
    # Topo slopes in y-direction
    #---------------------------------------------------------
 
-   run.TopoSlopesY.Type = "Constant"
-   run.TopoSlopesY.GeomNames = ""
+   hflow.TopoSlopesY.Type = "Constant"
+   hflow.TopoSlopesY.GeomNames = ""
 
-   run.TopoSlopesY.Geom.domain.Value = 0.0
+   hflow.TopoSlopesY.Geom.domain.Value = 0.0
 
    # You may also indicate an elevation file used to derive the slopes.
    # This is optional but can be useful when post-processing terrain-
    # following grids:
-   run.TopoSlopes.Elevation.FileName = "elevation.pfb"
+   hflow.TopoSlopes.Elevation.FileName = "elevation.pfb"
 
    #---------------------------------------------------------
    # Mannings coefficient
@@ -1080,9 +1074,9 @@ need to appear in the input script.
    # mannings roughnesses do not figure into the impes (fully sat) case but we still
    # need a key for them
 
-   run.Mannings.Type = "Constant"
-   run.Mannings.GeomNames = ""
-   run.Mannings.Geom.domain.Value = 0.0
+   hflow.Mannings.Type = "Constant"
+   hflow.Mannings.GeomNames = ""
+   hflow.Mannings.Geom.domain.Value = 0.0
 
 Phase sources allows you to add sources other than wells and boundaries,
 but we do not have any so this key is constant, 0.0 over entire domain.
@@ -1093,9 +1087,9 @@ but we do not have any so this key is constant, 0.0 over entire domain.
    # Phase sources:
    #----------------------------------------------------------------------------
 
-   run.PhaseSources.water.Type = "Constant"
-   run.PhaseSources.water.GeomNames = "domain"
-   run.PhaseSources.water.Geom.domain.Value = 0.0
+   hflow.PhaseSources.water.Type = "Constant"
+   hflow.PhaseSources.water.GeomNames = "domain"
+   hflow.PhaseSources.water.Geom.domain.Value = 0.0
 
 Next we define solver parameters for **IMPES**. Since this is the
 default solver, we do not need a solver key.
@@ -1111,140 +1105,44 @@ converges.
 
 ::
 
-   run.Solver.MaxIter = 50
+   hflow.Solver.MaxIter = 50
 
 The solution must be accurate to this level
 
 ::
 
-   run.Solver.AbsTol = 1E-10
+   hflow.Solver.AbsTol = 1E-10
 
 We drop significant digits beyond E-15
 
 ::
 
-   run.Solver.Drop = 1E-15
+   hflow.Solver.Drop = 1E-15
 
    #--------------------------------------------------------
    # Run and Unload the ParFlow output files
    #---------------------------------------------------------
 
-Here you set the number of realizations again using a local tcl
-variable. We have set only one run but by setting the ``n_runs`` 
-variable to something else we can run more than one realization 
-of hydraulic conductivity.
+You can run the example if you set the PARFLOW_DIR environment
+variable to point to a parflow build and activate a python virtual
+environment containing the pftools module you can run any test.
+From the folder ``test/python`` execute:
 
-::
+   python harvey_flow.py
 
-   # this script is setup to run 100 realizations, for testing we just run one
-   ###set n_runs 100
-   set n_runs 1
 
-Here is where you tell ParFlow where to put the output. In this case, it
-is a directory called flow. Then you cd (change directory) into that new
-directory. If you wanted to put an entire path rather than just a name,
-you would have more control over where your output file goes. For
-example, you would put ``file mkdir “/cape_cod/revised_statistics/flow"`` 
-and then change into that directory.
+This runs Parflow and and create output files into the folder
+``test/parflow/test_output/harvey_flow``.
+The program is a test case and validates the output files and removes them.
+If you remove the line ``rm(dir_name)`` from the end of the ``harvey_flow.py`` file the output
+files will not be removed.
 
-::
-
-   file mkdir "flow"
-   cd "flow"
-
-Now we loop through the realizations, again using tcl. ``k`` is the integer 
-counter that is incremented for each realization. When you use a variable 
-(rather than define it), you precede it with ``$``. The hanging character ``{`` 
-opens the do loop for ``k``.
-
-::
-
-   #
-   #  Loop through runs
-   #
-   for {set k 1} {$k <= $n_runs} {incr k 1} {
-
-The following expressions sets the variable ``seed`` equal to the expression 
-in brackets, which increments with each turn of the do loop and each seed 
-will produce a different random field of K. You set upper and lower aquifer, 
-because in the Cape Cod site, these are the two subsets of the domain. 
-Note the seed starts at a different point to allow for different random 
-field generation for the upper and lower zones.
-
-::
-
-   #
-   # set the random seed to be different for every run
-   #
-   pfset Geom.upper_aquifer.Perm.Seed  [ expr 33333+2*$k ] 
-   pfset Geom.lower_aquifer.Perm.Seed  [ expr 31313+2*$k ]
-
-The following command runs ParFlow and gives you a suite of output files
-for each realization. The file names will 
+The file names will 
 begin ``harvey_flow.1.xxxxx``, ``harvey_flow.2.xxxx``, etc up to as 
 many realizations as you run. The .xxxxx part will designate 
 x, y, and z permeability, etc. Recall that in this case, since we normalized 
 gravity, viscosity, and density, remember that we are really getting hydraulic 
 conductivity.
-
-::
-
-   pfrun harvey_flow.$k
-
-This command removes a large number of superfluous dummy files or
-un-distributes parallel files back into a single file. If you compile
-with the ``–with-amps-sequential-io`` option then a single ParFlow 
-file is written with corresponding ``XXXX.dist`` files and 
-the ``pfundist`` command just removes these ``.dist`` files 
-(though you don’t really need to remove them if you don’t want to).
-
-::
-
-   pfundist harvey_flow.$k
-
-The following commands take advantage of PFTools (*see*
-:ref:`PFTCL Commands`) and load pressure head output of the
-/parflow model into a pressure matrix.
-
-::
-
-   # we use pf tools to convert from pressure to head
-   # we could do a number of other things here like copy files to different
-   # format
-   set press [pfload harvey_flow.$k.out.press.pfb]
-
-The next command takes the pressures that were just loaded and converts
-it to head and loads them into a head matrix tcl variable.
-
-::
-
-   set head [pfhhead $press]
-
-Finally, the head matrix is saved as a ParFlow binary file (.pfb) and
-the k do loop is closed by the ``}`` character. Then we move up to the
-root directory when we are finished
-
-::
-
-    pfsave $head -pfb harvey_flow.$k.head.pfb
-   }
-
-   cd ".."
-
-Once you have modified the tcl input script (if necessary) and run
-ParFlow, you will have as many realizations of your subsurface as you
-specified. Each of these realizations will be used as input for a
-particle or streamline calculation in the future. We can see below, that
-since we have a tcl script as input, we can do a lot of different
-operations, for example, we might run a particle tracking transport code
-simulation using the results of the ParFlow runs. This actually
-corresponds to the example presented in the ``SLIM`` user’s manual.
-
-::
-
-   # this could run other tcl scripts now an example is below
-   #puts stdout "running SLIM"
-   #source bromide_trans.sm.tcl
 
 We can add options to this script. For example if we wanted to add a
 pumping well these additions are described below.
@@ -1265,27 +1163,27 @@ Let us change the input problem by adding a pumping well:
 
       ::
 
-         run.Wells.Names = "new_well"
+         hflow.Wells.Names = "new_well"
 
-         run.Wells.new_well.InputType = "Recirc"
+         hflow.Wells.new_well.InputType = "Recirc"
 
-         run.Wells.new_well.Cycle = "constant"
+         hflow.Wells.new_well.Cycle = "constant"
 
-         run.Wells.new_well.ExtractionType = "Flux"
-         run.Wells.new_well.InjectionType = "Flux"
+         hflow.Wells.new_well.ExtractionType = "Flux"
+         hflow.Wells.new_well.InjectionType = "Flux"
 
-         run.Wells.new_well.X = 10.0
-         run.Wells.new_well.Y = 10.0
-         run.Wells.new_well.ExtractionZLower = 0.5
-         run.Wells.new_well.ExtractionZUpper = 0.5
-         run.Wells.new_well.InjectionZLower = 0.2
-         run.Wells.new_well.InjectionZUpper = 0.2
+         hflow.Wells.new_well.X = 10.0
+         hflow.Wells.new_well.Y = 10.0
+         hflow.Wells.new_well.ExtractionZLower = 0.5
+         hflow.Wells.new_well.ExtractionZUpper = 0.5
+         hflow.Wells.new_well.InjectionZLower = 0.2
+         hflow.Wells.new_well.InjectionZUpper = 0.2
 
-         run.Wells.new_well.ExtractionMethod = "Standard"
-         run.Wells.new_well.InjectionMethod = "Standard"
+         hflow.Wells.new_well.ExtractionMethod = "Standard"
+         hflow.Wells.new_well.InjectionMethod = "Standard"
 
-         run.Wells.new_well.alltime.Extraction.Flux.water.Value = 0.50
-         run.Wells.new_well.alltime.Injection.Flux.water.Value = 0.75
+         hflow.Wells.new_well.alltime.Extraction.Flux.water.Value = 0.50
+         hflow.Wells.new_well.alltime.Injection.Flux.water.Value = 0.75
 
 For more information on defining the problem, see
 :ref:`Defining the Problem`.
@@ -1293,16 +1191,15 @@ For more information on defining the problem, see
 We could also visualize the results of the ParFlow simulations, using
 *VisIt*. For example, we can turn on *SILO* file output which allows
 these files to be directly read and visualized. We would do this by
-adding the following ``pfset`` commands, I usually add them to t
-he solver section:
+setting the following keys, I usually add them to the solver section:
 
 .. container:: list
 
    ::
 
-      run.Solver.WriteSiloSubsurfData = True
-      run.Solver.WriteSiloPressure = True
-      run.Solver.WriteSiloSaturation = True
+      hflow.Solver.WriteSiloSubsurfData = True
+      hflow.Solver.WriteSiloPressure = True
+      hflow.Solver.WriteSiloSaturation = True
 
 You can then directly open the file ``harvey_flow.#.out.perm_x.silo`` 
 (where ``#`` is the realization number). The resulting image will 
@@ -1325,19 +1222,14 @@ following grid (:ref:`TFG`) and subsurface geologes are
 specified using a ``.pfb`` indicator file. Input files were 
 generated using the workflow detailed in :ref:`Defining a Real domain`.
 
-Now for the tcl script:
+Now for the python script. 
+The first lines of the python script imports and create a parflow Run object.
 
 ::
 
    #
-   # Import the ParFlow TCL package
+   # Import the ParFlow python module
    #
-
-These first three lines are what link ParFlow and the tcl script, thus
-allowing you to use a set of commands seen later, such as ``pfset``, etc.
-
-::
-
    import parflow
    run = parflow.Run("test_run", __file__)
 
@@ -1346,7 +1238,7 @@ allowing you to use a set of commands seen later, such as ``pfset``, etc.
    #-----------------------------------------------------------------------------
    run.FileVersion = 4
 
-These next lines set the parallel process topology. The domain is
+The next lines set the parallel process topology. The domain is
 divided in *x*, *y* and *z* by ``P``, ``Q`` and ``R``. The total
 number of processors is ``P*Q*R`` (see :ref:`Computing Topology`).
 
@@ -1362,28 +1254,32 @@ number of processors is ``P*Q*R`` (see :ref:`Computing Topology`).
 
 Before we really get started make a directory for our outputs and copy
 all of the required input files into the run directory. These files will
-be described in detail later as they get used.
+be described in detail later as they get used. The code in the example
+requires the PF_SRC environment variable to be set:
+
+::
+
+   export PF_SRC=$PARFLOW_DIR
+
+Then the python script can copy the input files for the example
+into the working folder.
 
 ::
 
    #-----------------------------------------------------------------------------
    # Make a directory for the simulation and copy inputs into it
    #-----------------------------------------------------------------------------
-   exec mkdir "Outputs"
-   cd "./Outputs"
+   from parflow.tools.fs import cp
+   dir_name = get_absolute_path("test_output/LW_test")
+   mkdir(dir_name)
 
-   # ParFlow Inputs
-   file copy -force "../../parflow_input/LW.slopex.pfb" .
-   file copy -force "../../parflow_input/LW.slopey.pfb" .
-   file copy -force "../../parflow_input/IndicatorFile_Gleeson.50z.pfb"   .
-   file copy -force "../../parflow_input/press.init.pfb"  .
-
-   #CLM Inputs
-   file copy -force "../../clm_input/drv_clmin.dat" .
-   file copy -force "../../clm_input/drv_vegp.dat"  .
-   file copy -force "../../clm_input/drv_vegm.alluv.dat"  . 
-
-   puts "Files Copied"
+   cp("$PF_SRC/test/tcl/washita/clm_input/drv_clmin.dat", dir_name)
+   cp("$PF_SRC/test/tcl/washita/clm_input/drv_vegm.alluv.dat", dir_name)
+   cp("$PF_SRC/test/tcl/washita/clm_input/drv_vegp.dat", dir_name)
+   cp("$PF_SRC/test/tcl/washita/parflow_input/LW.slopex.pfb", dir_name)
+   cp("$PF_SRC/test/tcl/washita/parflow_input/LW.slopey.pfb", dir_name)
+   cp("$PF_SRC/test/tcl/washita/parflow_input/IndicatorFile_Gleeson.50z.pfb", dir_name)
+   cp("$PF_SRC/test/tcl/washita/parflow_input/press.init.pfb", dir_name)
 
 Next we set up the computational grid (*see*
 :ref:`Defining the Problem` and
@@ -1811,7 +1707,7 @@ associate them with the boundary conditions that follow.
    #-----------------------------------------------------------------------------
    # Boundary Conditions
    #-----------------------------------------------------------------------------
-   pfset BCPressure.PatchNames                   [pfget Geom.domain.Patches]
+   run.BCPressure.PatchNames = run.Geom.domain.Patches
 
 The bottom and sides of our domain are all set to no-flow (i.e. constant
 flux of 0) boundaries.
@@ -2162,30 +2058,24 @@ using it.
    #-----------------------------------------------------------------------------
    run.KnownSolution = "NoKnownSolution"
 
-Next we distribute all the inputs as described by the keys in
-:ref:`PFTCL Commands`. Note the slopes are 2D files, while the
-rest of the ParFlow inputs are 3D so we need to alter the NZ accordingly
-following example 4 in :ref:`common_pftcl`.
+Next we distribute all the inputs as described by the keys in the run.
+Note the slopes are 2D files, while the
+rest of the ParFlow inputs are 3D so we need to alter the NZ accordingly.
 
 ::
 
    #-----------------------------------------------------------------------------
    # Distribute inputs
    #-----------------------------------------------------------------------------
-   pfset ComputationalGrid.NX                41 
-   pfset ComputationalGrid.NY                41 
-   pfset ComputationalGrid.NZ                1
-   pfdist LW.slopex.pfb
-   pfdist LW.slopey.pfb
+   run.ComputationalGrid.NZ = 1
+   run.dist("LW.slopex.pfb")   
+   run.dist("LW.slopey.pfb")
 
-   pfset ComputationalGrid.NX                41 
-   pfset ComputationalGrid.NY                41 
-   pfset ComputationalGrid.NZ                50 
-   pfdist IndicatorFile_Gleeson.50z.pfb
-   pfdist press.init.pfb
+   run.ComputationalGrid.NZ = 50
+   run.dist("IndicatorFile_Gleeson.50z.pfb")   
+   run.dist("press.init.pfb")
 
-Now we run the simulation. Note that we use a tcl variable to set the
-run name.
+Now we run the simulation.
 
 ::
 
@@ -2201,10 +2091,8 @@ All that is left is to undistribute files.
    #-----------------------------------------------------------------------------
    # Undistribute Files
    #-----------------------------------------------------------------------------
-   pfundist $runname
-   pfundist press.init.pfb
-   pfundist LW.slopex.pfb
-   pfundist LW.slopey.pfb
-   pfundist IndicatorFile_Gleeson.50z.pfb
+   for filename in os.listdir("."):
+      if filename.endswith(".dist"):
+         os.remove(filename)
 
    puts "ParFlow run Complete"
