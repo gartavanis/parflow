@@ -13,3 +13,4 @@ to execution of a Python ParFlow run script.
    run_script
    tutorials/index
    keys_contribution
+   api_reference
