@@ -248,8 +248,6 @@ yaml files to guide you. The details you can include are listed in the section a
 
    The generator reads the YAML under ``pf-keys/definitions/`` and writes
    ``generated.py`` into the build tree under
-   ``pftools/python/parflow/tools/database/``. You should see output that lists
-   overlapping classes, including a line of the form ``Defined ## fields were
-   found``.
+   ``pftools/python/parflow/tools/database/``.
 
 5. Test your new key. If you have an input script with the new key, you can run that to check whether it's working.
