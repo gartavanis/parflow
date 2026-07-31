@@ -144,7 +144,7 @@ The general approach is as follows:
 
    4. Calculate slopes in the x and y directions from the elevation
    dataset. This can be done with the built in tools as shown in
-   :ref:`common_pftcl` Example 5. In most cases some additional
+   :ref:`Manipulating Data`. In most cases some additional
    processing of the DEM will be required to ensure that the drainage
    patterns are correct. To check this you can run a “parking lot test"
    by setting the permeability of surface to almost zero and adding a
