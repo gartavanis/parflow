@@ -223,9 +223,9 @@ Steps to add a new key
 =======================
 
 1. In ``pf-keys/definitions/``, select the YAML file that most closely matches
-   the key that you want to add. If your key is a token nested within an
-   existing key, find which file includes the parent token(s). For example, to
-   add ``Solver.Linear.NewKey``, edit *solver.yaml*.
+the key that you want to add. If your key is a token nested within an
+existing key, find which file includes the parent token(s). For example, to
+add ``Solver.Linear.NewKey``, edit *solver.yaml*.
 
 2. Open the yaml file and navigate to the level within the hierarchy where you want to put your key. The structure of
 the yaml files is designed to be easy to follow, so it should be easy to find the level where you'd like to add your
@@ -237,17 +237,17 @@ and pasting an existing key from the same level to make sure it's correct.
 yaml files to guide you. The details you can include are listed in the section above.
 
 4. Regenerate the Python keys using the CMake target ``GeneratePythonKeys``.
-   This is **not** a Makefile rule in the source tree; it must be run from a
-   configured ParFlow **build directory** (the same tree where you ran
-   ``cmake``), for example:
+This is **not** a Makefile rule in the source tree; it must be run from a
+configured ParFlow **build directory** (the same tree where you ran
+``cmake``), for example:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-       cd /path/to/parflow-build
-       make GeneratePythonKeys
+    cd /path/to/parflow-build
+    make GeneratePythonKeys
 
-   The generator reads the YAML under ``pf-keys/definitions/`` and writes
-   ``generated.py`` into the build tree under
-   ``pftools/python/parflow/tools/database/``.
+The generator reads the YAML under ``pf-keys/definitions/`` and writes
+``generated.py`` into the build tree under
+``pftools/python/parflow/tools/database/``.
 
 5. Test your new key. If you have an input script with the new key, you can run that to check whether it's working.
