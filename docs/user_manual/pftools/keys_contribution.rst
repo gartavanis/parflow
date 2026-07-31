@@ -9,11 +9,19 @@ Contributing New Keys
 YAML definitions
 =================
 
-The files in this directory are split up into groups to limit their length. Each ParFlow key comprises one or more
-tokens, separated by periods. In the YAML files, tokens are set up in a tabbed hierarchical structure, where each
-token is nested within the preceding token. Tokens are either static (starting with a capital letter) or dynamic
-(denoted by ``.{dynamic_name}``, e.g. ``geom_name`` in ``Geom.geom_name.Lower.X``). Leaf tokens are the tokens where
-the value is stored (e.g. ``R`` in ``Process.Topology.R``). All other tokens are referred to as intermediate tokens.
+ParFlow key definitions live in ``pf-keys/definitions/`` in the ParFlow source tree.
+The YAML files there are split by topic to limit their length (for example
+``solver.yaml``, ``phase.yaml``, ``geom.yaml``, ``bconditions.yaml``,
+``wells.yaml``, ``timing.yaml``, ``run.yaml``, ``netcdf.yaml``,
+``reservoirs.yaml``, ``core.yaml``, and ``metadata.yaml``).
+
+Each ParFlow key comprises one or more tokens, separated by periods. In the YAML
+files, tokens are set up in a tabbed hierarchical structure, where each token is
+nested within the preceding token. Tokens are either static (starting with a
+capital letter) or dynamic (denoted by ``.{dynamic_name}``, e.g. ``geom_name`` in
+``Geom.geom_name.Lower.X``). Leaf tokens are the tokens where the value is
+stored (e.g. ``R`` in ``Process.Topology.R``). All other tokens are referred to
+as intermediate tokens.
 
 Each token has one or more annotations associated with it, which fall into one of three categories, which are described
 below:
@@ -104,6 +112,29 @@ be treated as if it were a leaf token, including the value annotations that appl
 
 These annotations apply to the value set to the key.
 
+.. _pftools_keys_contribution_default:
+
+``default``
+^^^^^^^^^^^^
+
+Sets the default value of the key when the user does not provide one. This is
+used widely in the definition files. For example, in *solver.yaml*:
+
+.. code-block:: yaml
+
+    Solver:
+      AbsTol:
+        help: >
+          [Type: double] This value gives the absolute tolerance for the linear
+          solve algorithm.
+        default: 1e-9
+        domains:
+          DoubleValue:
+            min_value: 0.0
+
+The default must be compatible with the key's domains (for example a numeric
+default for ``DoubleValue`` / ``IntValue``, or a member of an ``EnumDomain``).
+
 .. _pftools_keys_contribution_domains:
 
 ``domains``
@@ -191,9 +222,10 @@ Skip field exportation but allow to set other keys from it in a more convenient 
 Steps to add a new key
 =======================
 
-1. Select the yaml file that most closely matches the key that you want to add. If your key is a token nested within an
-existing key, be sure to find which yaml file includes the parent token(s). For example, if you wanted to add the key
-``Solver.Linear.NewKey``, you would add it within the file *solver.yaml*.
+1. In ``pf-keys/definitions/``, select the YAML file that most closely matches
+   the key that you want to add. If your key is a token nested within an
+   existing key, find which file includes the parent token(s). For example, to
+   add ``Solver.Linear.NewKey``, edit *solver.yaml*.
 
 2. Open the yaml file and navigate to the level within the hierarchy where you want to put your key. The structure of
 the yaml files is designed to be easy to follow, so it should be easy to find the level where you'd like to add your
@@ -204,9 +236,20 @@ and pasting an existing key from the same level to make sure it's correct.
 3. Fill in the details of your key. Again, this format is designed to be readable, so please refer to examples in the
 yaml files to guide you. The details you can include are listed in the section above.
 
-4. Regenerate the Python keys using ``make GeneratePythonKeys``.
+4. Regenerate the Python keys using the CMake target ``GeneratePythonKeys``.
+   This is **not** a Makefile rule in the source tree; it must be run from a
+   configured ParFlow **build directory** (the same tree where you ran
+   ``cmake``), for example:
 
-You should see a longer message indicating an update that lists the overlapping classes, including the line ``Defined ##
-fields were found``.
+   .. code-block:: bash
+
+       cd /path/to/parflow-build
+       make GeneratePythonKeys
+
+   The generator reads the YAML under ``pf-keys/definitions/`` and writes
+   ``generated.py`` into the build tree under
+   ``pftools/python/parflow/tools/database/``. You should see output that lists
+   overlapping classes, including a line of the form ``Defined ## fields were
+   found``.
 
 5. Test your new key. If you have an input script with the new key, you can run that to check whether it's working.
