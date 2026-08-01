@@ -6,7 +6,7 @@ From TCL to Python
 Welcome to the tutorial for the Python pftools. You will need the following to
 fully follow this tutorial:
 
-- Python >= 3.6
+- Python >= 3.7
 - ParFlow installed and running, with the correct ``$PARFLOW_DIR`` environment variable established
   (You can check this by running ``echo $PARFLOW_DIR`` in your terminal)
 
@@ -21,25 +21,19 @@ In this first tutorial, we will set up a virtual environment with pftools and it
 
 ----
 
-First, let's set an environment variable for the newly cloned repo:
-
-.. code-block::
-
-    export PARFLOW_SOURCE=/path/to/new/parflow/
-
-Now, set up a virtual environment and install pftools:
+Set up a virtual environment and install pftools:
 
 .. code-block::
 
     python3 -m venv tutorial-env
     source tutorial-env/bin/activate
-    pip install pftools[all]
+    pip install pftools
 
 Test your pftools installation:
 
 .. code-block::
 
-    python3 $PARFLOW_SOURCE/test/python/base_3d/default_richards/default_richards.py
+    python3 $PARFLOW_DIR/test/python/default_richards.py
 
 The run should execute successfully, printing the message ``ParFlow ran successfully``.
 
@@ -54,7 +48,7 @@ Great, now you have a working ParFlow interface! Next, create a new directory an
 
     mkdir -p pftools_tutorial/tcl_to_py
     cd pftools_tutorial/tcl_to_py
-    cp $PARFLOW_SOURCE/test/default_richards.tcl .
+    cp $PARFLOW_DIR/test/tcl/default_richards.tcl .
 
 You can use our ``tcl2py`` tool to convert the TCL script to a Python script using the following command:
 

@@ -10,8 +10,7 @@ Generating solid (.pfsol) files for a ParFlow run can be somewhat of a pain. PFT
 Example
 --------
 
-To see the how Python can help generate solid files, navigate to *$PARFLOW_SOURCE/test/python/pfsol/simple-mask/* and open the Python script
-*simple-mask.py*. Here, you'll see the following lines at the top of the script:
+To see the how Python can help generate solid files, navigate to `$PARFLOW_SOURCE/test/python/new_features/simple-mask.py <https://github.com/parflow/parflow/blob/master/test/python/new_features/simple-mask.py>`_. Here, you'll see the following lines at the top of the script:
 
 .. code-block:: python3
 
@@ -27,7 +26,7 @@ have to deal with the more complicated steps.
 
 ----
 
-Lines 52 through 55 show examples of how the ``patch_matrix`` functions are used for different types of files:
+Lines 56 through 61 show examples of how the ``patch_matrix`` functions are used for different types of files:
 
 .. code-block:: python3
 
@@ -199,5 +198,5 @@ Full API: SolidFileBuilder
 More examples
 --------------
 
-Other example scripts showing how to use the ``SolidFileBuilder`` can be found in *$PARFLOW_SOURCE/test/python/pfsol/*. If you have an idea for a new feature or
+Other example scripts showing how to use the ``SolidFileBuilder`` can be found in `$PARFLOW_SOURCE/test/python/new_features/ <https://github.com/parflow/parflow/blob/master/test/python/new_features>`_. If you have an idea for a new feature or
 improvement to the functionality, please let us know, or better yet, become a contributor!

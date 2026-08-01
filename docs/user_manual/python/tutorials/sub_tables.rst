@@ -103,7 +103,7 @@ These tables can be formatted in a number of different ways. Here are several co
 - Delimiters can be either commas or spaces.
 - Table orientation does not matter (i.e., whether the field names are across the first row or down the first column). The only requirement is for that the top-left entry be ``key`` or one of its aliases.
 - The table does not have to be completely filled. As shown here, blank property values must be designated by a hyphen.
-- To properly process the table and map to the correct keys, the field names (including ``key``) must be one of several possible aliases. The aliases are listed in `this yaml file <https://github.com/grapp1/parflow/blob/py-input/pftools/python/parflow/tools/ref/table_keys.yaml>`_ that is included in the Python PFTools. These aliases include the exact end of the key name (e.g., ``Perm.Value`` as opposed to the alias ``Perm``), so when in doubt, you can use the exact name.
+- To properly process the table and map to the correct keys, the field names (including ``key``) must be one of several possible aliases. The aliases are listed in `this yaml file <https://github.com/parflow/parflow/blob/master/pftools/python/parflow/tools/ref/table_keys.yaml>`_ that is included in the Python PFTools. These aliases include the exact end of the key name (e.g., ``Perm.Value`` as opposed to the alias ``Perm``), so when in doubt, you can use the exact name.
 
 .. _sub_tables_default_db:
 

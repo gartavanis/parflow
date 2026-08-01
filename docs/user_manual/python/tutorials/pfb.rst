@@ -42,11 +42,11 @@ Let's copy another test Python script into our tutorial directory:
 
     mkdir -p ~/path/pftools_tutorial/pfb_test
     cd ~/path/pftools_tutorial/pfb_test
-    cp $PARFLOW_SOURCE/test/python/base/richards_FBx/richards_FBx.py .
+    cp $PARFLOW_SOURCE/test/python/richards_FBx.py .
 
 This test is a use case where an internal flow boundary is defined as a numpy array, written 
-to a PFB file, and distributed for use in the run. Open the file, and add the following 
-modules at the top:
+to a PFB file, and distributed for use in the run. You will notice the following 
+modules at the top of the file are imported:
 
 .. code-block::
 
