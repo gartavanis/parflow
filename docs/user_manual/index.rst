@@ -29,7 +29,7 @@ Welcome to the ParFlow User's Manual
    files
    keys
    pftools/index
-   python/index
+   python/tutorials/index
    bib
 
 .. [1]

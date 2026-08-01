@@ -315,7 +315,7 @@ From the command line you would execute your Python script using the command int
 
       python default_single.py 
 
-A lot more detail, including several tutorials and examples, are given in the :ref:`Python` section of this manual.
+A lot more detail, including several tutorials and examples, are given in the :ref:`Tutorials` section of this manual.
 
 
 One output file of particular interest is the ``<run name>.out.log`` file. 
