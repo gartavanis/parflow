@@ -47,3 +47,9 @@ Run Class
 
    parflow.tools.core.Run.data_accessor
    parflow.tools.core.Run.full_name
+
+.. automodule:: parflow.tools.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :exclude-members: Run

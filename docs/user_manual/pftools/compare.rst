@@ -1,7 +1,7 @@
-Parflow Module
+Compare Module
 ==============
 
-.. automodule:: parflow
+.. automodule:: parflow.tools.compare
    :members:
    :undoc-members:
    :show-inheritance:
