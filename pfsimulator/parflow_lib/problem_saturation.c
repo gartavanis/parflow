@@ -27,6 +27,7 @@
 **********************************************************************EHEADER*/
 
 #include "parflow.h"
+#include "problem_saturation.h"
 
 #include <string.h>
 #include <float.h>
@@ -48,6 +49,11 @@ typedef struct {
 
 typedef struct {
   Grid    *grid;
+
+  /* Per-cell van Genuchten residual saturation (Type 1 only), populated from the
+   * per-region scalars during Saturation() and exposed via ProblemSaturationGetSres
+   * so consumers (e.g. CLM) get per-cell S_res without re-reading the VG setup. */
+  Vector  *s_res_cell;
 
   double  *temp_data;
 } InstanceXtra;
@@ -465,6 +471,7 @@ void     Saturation(
 {
   PFModule      *this_module = ThisPFModule;
   PublicXtra    *public_xtra = (PublicXtra*)PFModulePublicXtra(this_module);
+  InstanceXtra  *instance_xtra = (InstanceXtra*)PFModuleInstanceXtra(this_module);
 
   Type0         *dummy0;
   Type1         *dummy1;
@@ -584,6 +591,13 @@ void     Saturation(
       h_s_values = (dummy1->h_s_values);
       data_from_file = (dummy1->data_from_file);
 
+      /* Lazily allocate the per-cell S_res cache on the grid this evaluation
+       * actually uses.  This guarantees subgrid consistency with phase_saturation
+       * and covers every module instance without relying on InitInstanceXtra. */
+      if (data_from_file == 0 && instance_xtra->s_res_cell == NULL)
+        instance_xtra->s_res_cell =
+          NewVectorType(VectorGrid(phase_saturation), 1, 1, vector_cell_centered);
+
       if (data_from_file == 0) /* Soil parameters given by region */
       {
         for (ir = 0; ir < num_regions; ir++)
@@ -616,11 +630,16 @@ void     Saturation(
               /* Saturation lookup table */
               SatTable *sat_table = dummy1->lookup_tables[ir];
 
+              Subvector *srs_sub = VectorSubvector(instance_xtra->s_res_cell, sg);
+              double    *srsdat = SubvectorData(srs_sub);
               GrGeomInLoop(i, j, k, gr_solid, r, ix, iy, iz, nx, ny, nz,
               {
                 int ips = SubvectorEltIndex(ps_sub, i, j, k);
                 int ipp = SubvectorEltIndex(pp_sub, i, j, k);
                 int ipd = SubvectorEltIndex(pd_sub, i, j, k);
+
+                /* Cache per-cell residual saturation for ProblemSaturationGetSres. */
+                srsdat[SubvectorEltIndex(srs_sub, i, j, k)] = s_ress[ir];
 
                 if (ppdat[ipp] >= 0.0)
                   psdat[ips] = (fcn == CALCFCN) ? sat_table->s_sat : 0.0;
@@ -647,6 +666,9 @@ void     Saturation(
                 Scs = pow(1.0 + pow(alpha_r * h_s_val, n_r), -m_r);
               }
 
+              Subvector *srs_sub = VectorSubvector(instance_xtra->s_res_cell, sg);
+              double    *srsdat = SubvectorData(srs_sub);
+
               if (fcn == CALCFCN)
               {
                 GrGeomInLoop(i, j, k, gr_solid, r, ix, iy, iz, nx, ny, nz,
@@ -660,6 +682,9 @@ void     Saturation(
                   double m = 1.0e0 - (1.0e0 / n);
                   double s_res = s_ress[ir];
                   double s_dif = s_difs[ir];
+
+                  /* Cache per-cell residual saturation for ProblemSaturationGetSres. */
+                  srsdat[SubvectorEltIndex(srs_sub, i, j, k)] = s_res;
 
                   if (ppdat[ipp] >= 0.0)
                     psdat[ips] = s_dif + s_res;
@@ -688,6 +713,11 @@ void     Saturation(
                   double n = ns[ir];
                   double m = 1.0e0 - (1.0e0 / n);
                   double s_dif = s_difs[ir];
+
+                  /* Cache per-cell residual saturation for ProblemSaturationGetSres
+                   * here too: module instances that only ever evaluate the
+                   * derivative (e.g. the Jacobian's) must also populate it. */
+                  srsdat[SubvectorEltIndex(srs_sub, i, j, k)] = s_ress[ir];
 
                   if (ppdat[ipp] >= 0.0)
                     psdat[ips] = 0.0;
@@ -1094,6 +1124,11 @@ PFModule  *SaturationInitInstanceXtra(
           dummy1->s_res_values = NULL;
           dummy1->s_sat_values = NULL;
         }
+        if (instance_xtra->s_res_cell)
+        {
+          FreeVector(instance_xtra->s_res_cell);
+          instance_xtra->s_res_cell = NULL;
+        }
       }
       if (public_xtra->type == 5)
       {
@@ -1195,6 +1230,11 @@ void  SaturationFreeInstanceXtra()
           dummy1->s_sat_values = NULL;
         }
       }
+      if (instance_xtra->s_res_cell)
+      {
+        FreeVector(instance_xtra->s_res_cell);
+        instance_xtra->s_res_cell = NULL;
+      }
     }
     if (public_xtra->type == 5)
     {
@@ -1204,6 +1244,31 @@ void  SaturationFreeInstanceXtra()
 
     tfree(instance_xtra);
   }
+}
+
+/*--------------------------------------------------------------------------
+ * ProblemSaturationGetSres
+ *   Public accessor: returns the per-cell van Genuchten residual saturation
+ *   vector (saturation Type 1), or NULL for other saturation types.  The
+ *   interior is populated by Saturation(); callers needing ghost values must
+ *   VectorUpdate the returned vector.
+ *--------------------------------------------------------------------------*/
+
+Vector *ProblemSaturationGetSres(PFModule *this_module)
+{
+  PublicXtra   *public_xtra = (PublicXtra*)PFModulePublicXtra(this_module);
+  InstanceXtra *instance_xtra = (InstanceXtra*)PFModuleInstanceXtra(this_module);
+
+  if (instance_xtra == NULL || public_xtra == NULL || public_xtra->type != 1)
+    return NULL;
+
+  /* File-based VG already stores per-cell S_res; region-based VG uses the cache
+   * populated from the per-region scalars during Saturation(). */
+  Type1 *dummy1 = (Type1*)(public_xtra->data);
+  if (dummy1->data_from_file == 1)
+    return dummy1->s_res_values;
+
+  return instance_xtra->s_res_cell;
 }
 
 /*--------------------------------------------------------------------------
