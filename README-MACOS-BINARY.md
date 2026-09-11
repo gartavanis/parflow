@@ -16,7 +16,7 @@ tar xzf parflow-vX.Y.Z-macos-arm64.tar.gz
 xattr -dr com.apple.quarantine install/
 
 # 3. Set environment (add to your shell profile for persistence)
-export PARFLOW_DIR=$PWD/install
+export PARFLOW_DIR=/path/to/your/download/
 export PATH=$PARFLOW_DIR/bin:$PATH
 
 OR in your python script add
