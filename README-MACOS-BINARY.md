@@ -19,10 +19,11 @@ xattr -dr com.apple.quarantine install/
 export PARFLOW_DIR=/path/to/your/download/
 export PATH=$PARFLOW_DIR/bin:$PATH
 
-OR in your python script add
+OR in your python script add:
 ```python
 import os
 os.environ["PARFLOW_DIR"] = '/path/to/your/download/'
+```
 
 # 4. Verify
 parflow -v
