@@ -194,7 +194,7 @@ jobs:
         VER="${{ steps.version.outputs.ver }}"
         ARCHIVE="parflow-${VER}-macos-arm64.tar.gz"
         # Include the binary readme at the top level of the archive.
-        cp README-BINARY.md "$PARFLOW_DIR/" 2>/dev/null || true
+        cp README-MACOS-BINARY.md "$PARFLOW_DIR/" 2>/dev/null || true
         tar -C "$(dirname "$PARFLOW_DIR")" \
             -czf "${ARCHIVE}" \
             "$(basename "$PARFLOW_DIR")"
