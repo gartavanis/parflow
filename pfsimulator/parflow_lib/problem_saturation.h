@@ -26,13 +26,25 @@
 *  USA
 **********************************************************************EHEADER*/
 
-#ifndef _PROBLEM_SATURATION
-#define _PROBLEM_SATURATION
+/** @file
+ * @brief Public accessors exposing per-cell constitutive parameters that the
+ *        Saturation module computes, so consumers outside the module (e.g. the
+ *        ParFlow-CLM coupler) can obtain them without re-reading the setup.
+ */
+
+#ifndef _PROBLEM_SATURATION_H
+#define _PROBLEM_SATURATION_H
 
 #include "pf_module.h"
 #include "vector.h"
 
-Vector*  ProblemSaturationGetSres(PFModule* this_module);
-Vector*  ProblemSaturationGetSsat(PFModule* this_module);
+/**
+ * Return the per-cell van Genuchten residual saturation vector for the
+ * Saturation module instance @p this_module, or NULL if the active saturation
+ * type is not van Genuchten (Type 1).  The interior is populated during
+ * Saturation(); callers that read ghost cells must VectorUpdate the result.
+ */
+Vector *ProblemSaturationGetSres(PFModule *this_module);
+Vector *ProblemSaturationGetSsat(PFModule *this_module);
 
-#endif
+#endif /* _PROBLEM_SATURATION_H */
