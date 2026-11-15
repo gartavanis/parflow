@@ -1518,6 +1518,8 @@ SetupRichards(PFModule * this_module)
         double *alpha_dat = SubvectorData(alpha_sub);
         Subvector *n_sub = VectorSubvector(n, is);
         double *n_dat = SubvectorData(n_sub);
+        Subvector *mask_sub = VectorSubvector(instance_xtra->mask, is);
+        double *mask_dat = SubvectorData(mask_sub);
         // Get the nz from n as it 3D
         nx = SubvectorNX(n_sub);
         ny = SubvectorNY(n_sub);
@@ -1525,7 +1527,8 @@ SetupRichards(PFModule * this_module)
                 
         init_torch_model(public_xtra->torch_model_filepath, nx, ny, nz, po_dat, mann_dat, slopex_dat,
                          slopey_dat, permx_dat, permy_dat, permz_dat, sres_dat, ssat_dat, fbz_dat,
-                         specific_storage_dat, alpha_dat, n_dat, public_xtra->torch_debug, public_xtra->torch_device,
+                         specific_storage_dat, alpha_dat, n_dat, mask_dat,
+                         public_xtra->torch_debug, public_xtra->torch_device,
                          public_xtra->torch_model_dtype, public_xtra->torch_include_ghost_nodes);
       }
       FreeVector(sres);
